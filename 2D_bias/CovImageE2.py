@@ -1,39 +1,39 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[30]:
+##########
+# Author: P. Antilogus
+# Adapted by T. Guillemin 
 
+# Goal: compute variance of super flats
+##########
 
-# initialisation box
-
-get_ipython().run_line_magic('matplotlib', 'inline')
+from eochar.bot_frame_op import *
+from eochar.GetPhotoFlux import *
 
 # system imports
 import os
-import sys
 import time
-from sys import exit 
+import sys
+from sys import exit
 import glob
 
-#  Specific package (display , pyfits ..) 
+#  Specific package (display , pyfits ..)
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.io.fits as pyfits
-from astropy.visualization import (ImageNormalize,PercentileInterval)
-# Firefly client imports   
-#from IPython.display import IFrame
+from astropy.visualization import ImageNormalize
+from astropy.visualization import PercentileInterval
 import matplotlib
 matplotlib.rcParams['figure.dpi'] = 120
 
-# load the frame analysis code
-get_ipython().run_line_magic('run', '-i  /sps/lsst/users/antilog/GitHub/eochar/python/lsst/eochar/bot_frame_op.py')
-get_ipython().run_line_magic('run', '-i  /sps/lsst/users/antilog/GitHub/eochar/python/lsst/eochar/GetPhotoFlux.py')
 # color map "per amplifier"
 cmap=plt.get_cmap('gist_ncar')
 colors=[cmap(j)[:3] for j in np.linspace(0,1,17)]
 
 # Data localisation
-BOT_REPO_DIR = '/sps/lsst/groups/FocalPlane/SLAC/LCA-10134_Cryostat-0001'
+#BOT_REPO_DIR = '/sps/lsst/groups/FocalPlane/SLAC/LCA-10134_Cryostat-0001'
+BOT_REPO_DIR = '/sps/lsst/groups/FocalPlane/SLAC/run5/'
 
 #
 # All existing rafts ======
@@ -57,18 +57,12 @@ for raft in raft_itl+raft_e2v:
 for raft in raft_corner:
     all_sensors[raft]=sensors_corner
 
-
-# In[31]:
-
-
-#
-#
 # CONFIGURATION FOR THE CURRENT EXECUTION  ==========================================================================================================
 # ---- raft and associated run ============ To be updated if needed 
 # 'raft' :  list of raft 
 # 'run' :  list of run , ex : ['9876','9874']  (remark : run is a string )   for all run of this raft : '*' 
 #
-run=['12877']
+run=['13145']
 #raft=raft_corner+['R11','R14','R23','R33','R42']
 raft=['R14']
 #raft=['R14','R23','R33','R42']
@@ -77,10 +71,10 @@ raft=['R14']
 #raft=['R42']+raft_corner
 #
 # You can limit the list of sensor to consider to a sub list of the total raft sensor , or comment  the line bellow to keep them all 
-all_sensors['R14']=['S10']
+all_sensors['R14']=['S12']
 #
-#directory to output data ============================== Eliane , Tu dois changer la ligne ci-dessous pour ecrire dans ta zone  web =================================== 
-output_data='/sps/lsst/users/antilog/web/plot/43'
+#directory to output data
+output_data='/sps/lsst/users/tguillem/web/debug/'
 #================= Method for the correction of bias 
 # 1 Constant subtracted per image ( th constant is computed from the mean of the serial overscan ) 
 #Bias_cor='Ct'
@@ -113,8 +107,8 @@ ncovy=2
 # dont produce the table with the  overscan data (save space and time if not used ) 
 over=False
 # dont produce the error for the covariances (save space and time if not used ) 
-#cov_error=False
-cov_error=True
+cov_error=False
+#cov_error=True
 # ==================================================================================================================================================
 ImageLabel+='_'+Bias_cor+'_bias_cor'
 #
@@ -144,10 +138,7 @@ print("We will compute covariances matrix up to cov(%d,%d) \n" % (ncovx,ncovy))
 print('The data are taken fron %s ' %(BOT_REPO_DIR ))
 print('for the run(s) %s and from the directory %s\n\n' % (run,image_dir))
 
-
-# In[32]:
-
-
+###function raft_param()
 def raft_param(raft_cur):
         if raft_cur in raft_corner :
             nb_amp_in_raft=48
@@ -183,10 +174,7 @@ def raft_param(raft_cur):
                 ch_cur+=number_of_amp_sensor
         return number_of_raft_sensor,nb_amp_in_raft,label_txt,label_pos,label_chan,label_chan_pos
 
-
-# In[33]:
-
-
+###function SaveFig()
 def SaveFig(fig,PlotFile,run_cur='',raft_cur='',ccd_cur='',hdu=0):
     if hdu<1 : 
         root_plt=os.path.join(output_data,run_cur,raft_cur,ccd_cur)
@@ -201,34 +189,28 @@ def SaveFig(fig,PlotFile,run_cur='',raft_cur='',ccd_cur='',hdu=0):
     plt.close(fig) 
     return
 
-
-# In[34]:
-
-
 start_time=time.time()
+###function PrintTimer()
 def PrintTimer(text):
     sys.stdout.write("\r") 
     txt="%s ,  Running since %f seconds" % (text,time.time()-start_time)
     sys.stdout.write(txt) 
     sys.stdout.flush()
 
-
-# In[35]:
-
-
-# loop on run
-#
-
-#
+# loop on runs
 for irun in range(len(run)) : 
     run_cur=run[irun]
     print('Analysis of run ',run_cur)
     # raw data directory for this run 
-    data=os.path.join(BOT_REPO_DIR,run_cur,'BOT_acq','v0')
+    # data=os.path.join(BOT_REPO_DIR,run_cur,'BOT_acq','v0')
+    data=os.path.join(BOT_REPO_DIR,run_cur)
+    print(data)
     all_raw=glob.glob(data+'/*')
     all_raw.sort()
+    print(all_raw)
     # to select the last raw  data directory generated (in geneeral there is just 1 , bot some time more ...) 
-    data=all_raw[-1]
+    #data=all_raw[-1]
+    print(data)
     # all image directories
     if image_dir=='flat_bias_*' :
         all_dir_0=glob.glob(data+'/'+image_dir)
@@ -261,9 +243,11 @@ for irun in range(len(run)) :
                 all_dir.append(all_dir_0[i])
         pre_bias_flux=np.array(pre_bias_flux)
     else :
+        print('else')
         # all image directories
         all_dir=glob.glob(data+'/'+image_dir)
         all_dir.sort()
+        print(all_dir)
         pre_bias_flux=np.zeros((len(all_dir)))
         #
     # fill the flux data
@@ -306,6 +290,7 @@ for irun in range(len(run)) :
             for jfile in range(nb_images) :                
                 file_all=all_dir[jfile]+'/MC_C_*_'+raft_cur+'_'+ccd_cur+'.fits'
                 file=glob.glob(file_all)
+                print(file)
                 if len(file)!=1 :
                     print( 'ERROR  : number of selected file incorect : ',file)
                     continue
@@ -331,7 +316,7 @@ for irun in range(len(run)) :
                     yl=file_cur[0].all_file[0].first_p_over
                     nb_line=yl-yf
                     nb_col=xl-xf
-
+                    print(file_cur[0].all_file[0])
                     #  
                     if over : 
                         overscan=np.zeros((nb_files,nb_amp),dtype=np.object_)
@@ -349,12 +334,16 @@ for irun in range(len(run)) :
                         prod2_offset=np.zeros((nb_amp,ncovy,ncovx))
                     #
                     start=False
-
+                    print(str(nb_line)+' '+str(nb_col))
                 #    
                 # === 
+                print('*********DEBUG**********')
                 for i in range(2) : 
                     for iamp in range(number_of_amp_sensor) : 
                         flux[iccd,iamp,ifile]=np.mean(np.median(file_cur[i].all_file[0].Image[iamp][yf+50:yl-20,xf+20:xl-20],axis=1),axis=0)
+                        #print(file_cur[i].all_file[0].Image)
+                        print(np.shape(file_cur[i].all_file[0].Image))
+                        print(str(iamp)+' '+str(flux[iccd,iamp,ifile]))
                     ifile+=1
                     if ifile%10==0 : 
                         if Flat : 
@@ -579,13 +568,6 @@ for irun in range(len(run)) :
                 plt.colorbar()
             plt.show()
             SaveFig(fig,ImageLabel+'_2d_var_90',run_cur=run_cur,raft_cur=raft_cur,ccd_cur=ccd_cur,hdu=0)            
-
-         
-   
-
-
-# In[ ]:
-
 
 
 
