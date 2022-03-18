@@ -2,8 +2,8 @@
 # coding: utf-8
 
 ##########
-# Author: DM 2019 bootcamp
-# Adapted by T. Guillemin
+# Started from a DM 2019 bootcamp notebook
+# Author: T. Guillemin
 
 # Goal: do some bias plots and access overscan/image pixels
 ##########
