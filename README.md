@@ -1,1 +1,1 @@
-# Set of python scripts for focal plane analysis
+Set of python scripts for focal plane analysis
