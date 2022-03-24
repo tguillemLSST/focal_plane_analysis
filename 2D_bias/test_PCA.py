@@ -31,11 +31,18 @@ root_dir=str(sys.argv[5])
 Run = str_run_all
 det_name = str_raft + '_' + str_all_sensors
 bot_acq_dir = repo_path + Run
+#hack for old run
+#bot_acq_dir = repo_path
 
-bias_files = glob.glob(os.path.join(bot_acq_dir, 'bias_bias*',
-                                    f'MC*{det_name}.fits'))
+#flags
+run_PCA = False
+
+#bias_files = glob.glob(os.path.join(bot_acq_dir, 'flat_bias_5*', f'MC*{det_name}.fits'))
+bias_files = glob.glob(os.path.join(bot_acq_dir, 'dark_dark_*', f'MC*{det_name}.fits'))
+
 #bias_files = [glob.glob(os.path.join(bot_acq_dir, 'bias_bias_012',f'MC*{det_name}.fits')),glob.glob(os.path.join(bot_acq_dir, 'bias_bias_013',f'MC*{det_name}.fits'))]
 #bias_files = ['/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_012/MC_C_20211209_001682_R14_S12.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_013/MC_C_20211209_001683_R14_S12.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_014/MC_C_20211209_001684_R14_S12.fits']
+#bias_files = ['/sps/lsst/groups/FocalPlane/SLAC/run5/13144/flat_bias_554/MC_C_20211207_000334_R14_S22.fits']
 print(bias_files)
 #output_path = '/sps/lsst/users/tguillem/web/PCA/superbias/'+Run+'/'+det_name+'/'
 #output_path = '/sps/lsst/users/tguillem/web/PCA/flat/'+Run+'/'+det_name+'/'
@@ -49,40 +56,44 @@ file_prefix = root_dir + f'{det_name}_{Run}'
 
 print('********************')
 # Compute the PCA-based bias model, using bias_files as the input data.
-ccd_pcas = sensorTest.CCD_bias_PCA()
-pca_files = ccd_pcas.compute_pcas(bias_files, file_prefix)
-#print(pca_files)
-
+if run_PCA==True:
+    ccd_pcas = sensorTest.CCD_bias_PCA()
+    pca_files = ccd_pcas.compute_pcas(bias_files, file_prefix)
+    
 ##########Check the PCA correction on bias in flat runs
 #bias_files = ['/pbs/home/t/tguillem/data_run5/13144/flat_bias_200/MC_C_20211206_000755_R14_S12.fits']
 #bias_files = ['/pbs/home/t/tguillem/data_run5/13144/flat_bias_749/MC_C_20211207_000529_R14_S12.fits', '/pbs/home/t/tguillem/data_run5/13144/flat_bias_515/MC_C_20211207_000295_R14_S12.fits']
 #bias_files = glob.glob(os.path.join('/pbs/home/t/tguillem/data_run5/13144/', f'flat_bias_*',f'MC*{det_name}.fits'))
 #print(bias_files)
-#pca_files = ('R14_S22_13159_pca_bias.pickle', 'R14_S22_13159_pca_bias.fits')
+pca_files = ('R14_S22_13159_pca_bias.pickle', 'R14_S22_13159_pca_bias.fits')
+#pca_files = ('R14_S12_13159_pca_bias.pickle', 'R14_S12_13159_pca_bias.fits')
+print('PCA-files used:' + str(pca_files))
 ##########
 
 # Loop over bias files and amps in each frame and compute the
 # bias-subtracted image using the PCA-bias model.  Print some stats
 # for each residual image.
 for i, bias_file in enumerate(bias_files):
-    #if(i==30):
+    #if(i==2):
     #    break
     print(bias_file)
+    frame = (bias_file.partition('/MC')[0])[-3:]
+    #print(frame)
     ccd = sensorTest.MaskedCCD(bias_file, bias_frame=pca_files)
-    print('ccd object OK')
+    #print('ccd object OK')
     plt.figure(figsize=[25,20])
     plt.suptitle('PCA-corrected image: run '+ Run + ' detector ' + det_name + '\n for file ' + bias_file)
     for amp in ccd:
         bias_subtracted_image = ccd.unbiased_and_trimmed_image(amp)
         imarr = bias_subtracted_image.getImage().array
-        print(i, amp, np.median(imarr),np.std(imarr))
+        #print(i, amp, np.median(imarr),np.std(imarr))
         #plot
         #plt.figure()
         #plt.imshow(imarr.T, vmin=-10, vmax=10, cmap = 'hot', origin='lower')
         #plt.imshow(imarr, vmin=-3, vmax=3, cmap = 'hot', origin='lower')
         #plt.colorbar()
         plt.subplot(2,8,amp,title=amp)
-        plt.imshow(imarr, vmin=-3, vmax=3, cmap = 'hot', origin='lower')
+        plt.imshow(imarr, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
         plt.colorbar()
         if not(amp%8==1) :
             figure=plt.gca()
@@ -94,7 +105,24 @@ for i, bias_file in enumerate(bias_files):
         #    y_axis = figure.axes.get_yaxis()
         #    y_axis.set_visible(False)
         #   plt.colorbar()
-    plt.savefig(output_path+"PCA_corr_bias_"+str(i)+".png") 
+    plt.savefig(output_path+"PCA_corr_bias_"+frame+".png") 
+    
+    #images without bias correction
+    #ccd_raw = sensorTest.MaskedCCD(bias_file)
+    #print('ccd object OK')
+    #for amp in ccd:
+    #    image = ccd_raw.bias_subtracted_image(amp)
+    #    imarr = image.getImage().array
+    #    plt.imshow(imarr, vmin=-3, vmax=3, cmap = 'hot', origin='lower')
+    #    plt.colorbar()
+    #    if not(amp%8==1) :
+    #        figure=plt.gca()
+    #        y_axis = figure.axes.get_yaxis()
+    #        y_axis.set_visible(False) 
+    #    plt.savefig(output_path+"bias_"+str(i)+".png")
+        
+    #try to plot mean_overscan_column vs column number
+    #get image
     
 #check pca_superbias function
 #superbias = sensorTest.pca_superbias(bias_files, pca_files, outfile='superbias.FITS', overwrite=True,statistic=afwMath.MEDIAN)
