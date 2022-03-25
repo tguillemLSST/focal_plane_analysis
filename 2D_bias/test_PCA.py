@@ -9,6 +9,7 @@ from sklearn.decomposition import PCA
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.afw.detection as afwDetect
+from astropy.io import fits 
 
 #job configuration
 print('Configuration arguments: ', str(sys.argv))
@@ -59,7 +60,12 @@ print('********************')
 if run_PCA==True:
     ccd_pcas = sensorTest.CCD_bias_PCA()
     pca_files = ccd_pcas.compute_pcas(bias_files, file_prefix)
-    
+
+#test overscan2D
+#ccd_pcas = sensorTest.CCD_bias_overscan2D()
+#file_prefix_local = f'{det_name}_{Run}'
+#pca_files = ccd_pcas.compute_pcas(bias_files, file_prefix_local)
+
 ##########Check the PCA correction on bias in flat runs
 #bias_files = ['/pbs/home/t/tguillem/data_run5/13144/flat_bias_200/MC_C_20211206_000755_R14_S12.fits']
 #bias_files = ['/pbs/home/t/tguillem/data_run5/13144/flat_bias_749/MC_C_20211207_000529_R14_S12.fits', '/pbs/home/t/tguillem/data_run5/13144/flat_bias_515/MC_C_20211207_000295_R14_S12.fits']
@@ -74,7 +80,7 @@ print('PCA-files used:' + str(pca_files))
 # bias-subtracted image using the PCA-bias model.  Print some stats
 # for each residual image.
 for i, bias_file in enumerate(bias_files):
-    #if(i==2):
+    #if(i==1):
     #    break
     print(bias_file)
     frame = (bias_file.partition('/MC')[0])[-3:]
@@ -107,20 +113,99 @@ for i, bias_file in enumerate(bias_files):
         #   plt.colorbar()
     plt.savefig(output_path+"PCA_corr_bias_"+frame+".png") 
     
-    #images without bias correction
-    #ccd_raw = sensorTest.MaskedCCD(bias_file)
-    #print('ccd object OK')
-    #for amp in ccd:
-    #    image = ccd_raw.bias_subtracted_image(amp)
-    #    imarr = image.getImage().array
-    #    plt.imshow(imarr, vmin=-3, vmax=3, cmap = 'hot', origin='lower')
-    #    plt.colorbar()
-    #    if not(amp%8==1) :
-    #        figure=plt.gca()
-    #        y_axis = figure.axes.get_yaxis()
-    #        y_axis.set_visible(False) 
-    #    plt.savefig(output_path+"bias_"+str(i)+".png")
+    #images without PCA correction
+    ccd_raw = sensorTest.MaskedCCD(bias_file)
+    for amp in ccd_raw:
+        image = ccd_raw.unbiased_and_trimmed_image(amp)
+        imarr = image.getImage().array
+        #print(i, amp, np.median(imarr),np.std(imarr))
+        plt.subplot(2,8,amp,title=amp)
+        plt.imshow(imarr, vmin=-3, vmax=3, cmap = 'hot', origin='lower')
+        plt.colorbar()
+        if not(amp%8==1) :
+            figure=plt.gca()
+            y_axis = figure.axes.get_yaxis()
+            y_axis.set_visible(False) 
+        plt.savefig(output_path+"bias_"+frame+".png")
+
+    print('+++++++2D correction')    
+    #images with 2D raw correction
+    #first_line,first_p_over,first_col,first_s_over=image_area(fitsfile)
+    #self.first_col=first_col
+    #self.first_s_over=first_s_over
+    #self.first_line=first_line
+    #self.first_p_over=first_p_over
+    first_col=10
+    first_s_over=522
+    first_line=0
+    first_p_over=2022
+    last_l=2048
+    last_s=576
+    
+    ccd_raw = sensorTest.MaskedCCD(bias_file)
+    for amp in ccd_raw:
+        image = ccd.bias_subtracted_image(amp)
+        imarr = image.getImage().array
+        #print(imarr.shape)
+        #########test 2D overscan correction
+        # serial overscan
+        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
+        rawl=np.zeros((last_l-first_p_over-2,last_s))
+        # // ovesrcan per column , corrected by the serial value per line
+        for l in range(first_p_over+2,last_l):
+            rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
+        # // overscan
+        mean_over_per_column=np.mean(rawl[:,:],axis=0)
+        # // correction
+        linef=mean_over_per_line[:,np.newaxis]
+        # generate the 2D correction (thank's to numpy)
+        over_cor_mean=mean_over_per_column+linef
+        # 2D correction of the overscan : 1 overscan subtracted per line , 1 overscan subtracted per column
+        imarr -= over_cor_mean
+            
+        plt.subplot(2,8,amp,title=amp)
+        plt.imshow(imarr, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+        plt.colorbar()
+        if not(amp%8==1) :
+            figure=plt.gca()
+            y_axis = figure.axes.get_yaxis()
+            y_axis.set_visible(False)
+            #plt.imshow(image[i,:,:],cmap = 'hot',origin='lower',norm=norm)
+            #if not(i%8 ==0) :
+            #    figure=plt.gca()
+            #    y_axis = figure.axes.get_yaxis()
+            #    y_axis.set_visible(False)
+            #   plt.colorbar()
+        plt.savefig(output_path+"2D_corr_bias_"+frame+".png") 
+            
+
+        #self.Image.append(fitsfile[i].data-over_cor_mean)
         
+        #if not(Slow) :
+        #    if Bias=='Ct' :
+        #        self.Image.append(fitsfile[i].data-mean_over_per_line.mean())
+        #        else :
+        #            # if 2D or what ever else
+            #            self.Image.append(fitsfile[i].data-over_cor_mean)
+            #            self.OverCol.append(mean_over_per_column)
+            #            self.OverLine.append(mean_over_per_line)
+            #            else :
+            #                if Bias=='Ct' :
+            #                    Image_single=fitsfile[i].data-mean_over_per_line.mean()
+             #                   else :
+             #                   Image_single=fitsfile[i].data-over_cor_mean
+                                
+
+
+
+        #print(imarr.shape)
+    #image
+    #for amp in ccd_raw:
+    #    #access back full image
+    #    image = ccd_raw.unbiased_and_trimmed_image(amp)
+    #    imarr = image.Factory(image, overscan).getImage().getArray()
+    
+    
     #try to plot mean_overscan_column vs column number
     #get image
     
