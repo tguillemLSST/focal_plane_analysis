@@ -36,12 +36,14 @@ UnBias='2D'
 #file_to_read='/sps/lsst/groups/FocalPlane/SLAC/run5/'+run+'/'+directory+'/'+file
 
 #HACK
-file_to_read='R14_S22_13159_pca_bias.fits'
+#file_to_read='R14_S22_13159_pca_bias.fits'
+#file_to_read='/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits'
+file_to_read='/sps/lsst/groups/FocalPlane/SLAC/run5/13161/bias_bias_013/MC_C_20211212_000150_R14_S22.fits'
 run='13159'
 raft='R14'
 ccd='S22'
 
-output_data='/sps/lsst/users/tguillem/web/debug/' 
+output_data='/sps/lsst/users/tguillem/web/debug/images_dark_run/' 
 
 file_list=glob.glob(file_to_read)
 file_list.sort()
@@ -115,7 +117,7 @@ print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
 
 # plot the raw image / amplifiers 
 fig=plt.figure(figsize=[25,20])
-title='Master bias for PCA. Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+title='Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
 image_txt='RawImagePerAmp'
 plt.suptitle(title)
 for i in range(16) :
