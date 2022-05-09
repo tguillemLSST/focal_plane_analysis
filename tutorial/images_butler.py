@@ -37,7 +37,7 @@ visits_bias=butler.queryMetadata('raw', ['visit'], dataId={'testType': 'BIAS','i
 print(visits_bias)
 
 ## Specifiy a visit/sensor/amplifier
-visit = visits_bias[0]
+visit = visits_bias[3]
 sensor = 97
 amp = 'C16'
 
