@@ -54,3 +54,7 @@ for run_cur in run_all :
 
 print('Selected flats:')
 print(visits_all)
+
+end = time.time()
+total_time = round(end - start,1)
+print(str(total_time) + ' s')
