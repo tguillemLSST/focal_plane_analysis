@@ -33,6 +33,14 @@ collection = "LSSTCam/raw/all"
 butler = dafButler.Butler(repo, collections=collection)
 registry = butler.registry
 
+#method 1
+visits=[]
+for i,dataId in enumerate(registry.queryDimensionRecords('exposure', where='exposure.science_program = \'13151\' AND exposure.observation_type = \'bias\'')):
+	        visits.append(dataId.id)
+print(visits)
+sys.exit()
+
+#method 2
 # build a DataFrame from exposures
 df_exposure = pd.DataFrame(columns=['instrument','id','physical_filter','obs_id','exposure_time','dark_time','observation_type','observation_reason','day_obs','seq_num','group_name','group_id','target_name','science_program','tracking_ra','tracking_dec','sky_angle','zenith_angle','timespan'])
 
