@@ -25,10 +25,14 @@ print('outpath = ' + outpath)
 
 ###t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
 
-inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
-#inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_fix3/13162/bias_bias_'
-#exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
-exposures = ['015','016']
+#input file selection
+#2D row-col correction
+#inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
+#1D row correction  (by mistake)
+inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_fix3/13162/bias_bias_'
+
+exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
+#exposures = ['015','016']
 #rafts=['R01' ,'R02' ,'R03' ,'R10' ,'R11' ,'R12' ,'R13' ,'R14' ,'R20' ,'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34' ,'R41' ,'R42' ,'R43']
 #rafts=['R14']
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
@@ -107,7 +111,7 @@ bin_range = [0,0.5]
 nbins = 50
 plt.figure()
 plt.hist(var_exposures_e2v, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'blue')
-plt.hist(var_exposures_itl, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'red')
+plt.hist(var_exposures_itl, range=bin_range, bins=nbins, label='itl', histtype='step', color = 'red')
 #plt.ylim([0.8, 1.1])
 plt.xlabel('var_exposures')
 plt.ylabel('n_amp')
