@@ -27,7 +27,9 @@ import gc
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.afw.detection as afwDetect
-from lsst.eotest.fitsTools import fitsWriteto
+#correct line: from lsst.eotest.fitsTools import fitsWriteto
+#hack to work in batch
+from eotest.fitsTools import fitsWriteto
 #imutils copied for now
 import imutils as iu
 
@@ -80,6 +82,7 @@ print(file_list)
 ###HACK
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_0/20220621T090913Z/dark/dark_LSSTCam_R14_S22_u_tguillem_master_dark_0_20220621T090913Z.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits']
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_000/MC_C_20211212_000177_R41_S21.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_001/MC_C_20211212_000178_R41_S21.fits']
 
 print(file_list)
 
@@ -146,24 +149,58 @@ def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=
         return spf
 ###end functions
 
-#compute a superbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
+#compute a masterbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
 outfile = 'masterbias.FITS'
+path_output = os.path.join(output_data,run,raft,ccd)
+os.makedirs(path_output)
+
+images = []
+for i in range(16):
+            images.append([])
 medianed_images = dict()
-statistic=afwMath.MEDIAN
-for amp in range(0,16):
-        images = []
-        for bias_file in file_list:
-            with pyfits.open(bias_file) as fits:
-                imarr = np.array(fits[amp+1].data, dtype=np.float32)
-                images.append(afwImage.ImageF(imarr))
-        medianed_images[amp] = afwMath.statisticsStack(images, statistic)
+statistic=afwMath.MEAN
+for ifile in range(len(file_list)):
+    fits=pyfits.open(file_list[ifile])
+    for i in range(0,16):
+        imarr = fits[i+1].data
+        imarr_np = np.array(imarr, dtype=np.float32)
+        images[i].append(afwImage.ImageF(imarr_np))
+    fits.close()
+for i in range(0,16):
+    medianed_images[i] = afwMath.statisticsStack(images[i], statistic)
 with pyfits.open(file_list[0]) as hdus:
     for amp, image in medianed_images.items():
         hdus[amp].data = image.array
         hdus[0].header['FILENAME'] = os.path.basename(outfile)
-        fitsWriteto(hdus, outfile, overwrite=True) 
-print('Master bias produced')
-sys.exit()
+        fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True)
+print('Master bias after correction produced')
+#plot
+fig=plt.figure(figsize=[25,20])
+title='CCD image: master bias'
+image_txt='CCD_Image_master_bias'
+plt.suptitle(title, fontsize=20)
+fits=pyfits.open(path_output+'/'+outfile)
+image_tmp=[]
+for i in range(16) :
+    imarr = fits[i].data
+    mean = np.mean(imarr[first_line:first_p_over,first_col:first_s_over])
+    imarr = imarr - mean
+    image_tmp.append(imarr)
+print(image_tmp)
+image = SingleImageIR(image_tmp)
+norm = ImageNormalize(image, interval=PercentileInterval(70.))
+plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+plt.colorbar()
+SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+fits.close()
+#sys.exit()
+
+#prepare corrected masterbias
+outfile = 'masterbias_corr_2D.FITS'
+images_corr_2D = []
+for i in range(16):
+        images_corr_2D.append([])
+medianed_images_corr_2D = dict() 
 
 run_base = run
 #plots
@@ -244,7 +281,10 @@ for ifile in range(len(file_list)):
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
     for i in range(nb_amp):
-        image_tmp.append(fits[i+1].data)
+        imarr = fits[i+1].data
+        mean = np.mean(imarr[first_line:first_p_over,first_col:first_s_over])
+        imarr = imarr - mean
+        image_tmp.append(imarr)
     image = SingleImageIR(image_tmp)
     norm = ImageNormalize(image, interval=PercentileInterval(70.))
     plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
@@ -386,6 +426,10 @@ for ifile in range(len(file_list)):
         mean_line_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=1)
         var_column_corr_2D[i,:] = np.var(imarr_science_corr_2D,axis=0)
         mean_column_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=0)
+
+        imarr_np = np.array(imarr, dtype=np.float32)
+        images_corr_2D[i].append(afwImage.ImageF(imarr_np))
+
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
     plt.close(fig)
     t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
@@ -442,6 +486,8 @@ for ifile in range(len(file_list)):
     plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
     plt.colorbar()
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0) 
+
+    fits.close()
     
     print('free memory')
     print(dir())
@@ -450,9 +496,52 @@ for ifile in range(len(file_list)):
     del imarr
     del imarr_science
     del imarr_science_corr_2D
+    del imarr_np
     gc.collect()
+
+#master bias after correction
+for amp in range(0,16):
+    medianed_images_corr_2D[amp] = afwMath.statisticsStack(images_corr_2D[amp], statistic)
+with pyfits.open(file_list[0]) as hdus:
+    for amp, image in medianed_images_corr_2D.items():
+        hdus[amp].data = image.array
+        hdus[0].header['FILENAME'] = os.path.basename(outfile)
+        fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True) 
+print('Master bias after correction produced')
+
+#plot
+#2D corr
+fig=plt.figure(figsize=[25,20])
+title='2D-corrected CCD image: master bias'
+image_txt='CCD_Image_master_bias_2D_corr'
+plt.suptitle(title, fontsize=20)
+fits=pyfits.open(path_output+'/'+outfile)
+image_tmp=[]
+for i in range(16) :
+    imarr = fits[i].data
+    image_tmp.append(imarr)
+#print(image_tmp)
+image = SingleImageIR(image_tmp)
+norm = ImageNormalize(image, interval=PercentileInterval(70.))
+plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+plt.colorbar()
+SaveFig(fig,image_txt,run_cur=run_base,raft_cur=raft,ccd_cur=ccd,hdu=0)
+fits.close()
     
 sys.exit()
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #try one image per raft ==> NOT YET WORKING
 fig,ax = plt.subplots(3,3,figsize=(15,15))
