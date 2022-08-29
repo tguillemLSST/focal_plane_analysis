@@ -21,6 +21,7 @@ import astropy.io.fits as pyfits
 from astropy.table import Table
 import matplotlib
 import os
+import shutil
 from astropy.visualization import (ImageNormalize,PercentileInterval,HistEqStretch)
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import gc 
@@ -83,7 +84,7 @@ print(file_list)
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_0/20220621T090913Z/dark/dark_LSSTCam_R14_S22_u_tguillem_master_dark_0_20220621T090913Z.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_000/MC_C_20211212_000177_R41_S21.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_001/MC_C_20211212_000178_R41_S21.fits']
-
+file_list=file_list[0:20]
 print(file_list)
 
 fits=pyfits.open(file_list[0])
@@ -152,6 +153,8 @@ def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=
 #compute a masterbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
 outfile = 'masterbias.FITS'
 path_output = os.path.join(output_data,run,raft,ccd)
+if os.path.exists(path_output):
+         shutil.rmtree(path_output)
 os.makedirs(path_output)
 
 images = []
@@ -527,21 +530,132 @@ plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
 plt.colorbar()
 SaveFig(fig,image_txt,run_cur=run_base,raft_cur=raft,ccd_cur=ccd,hdu=0)
 fits.close()
+
+#store master bias images
+fits=pyfits.open(path_output+'/'+'masterbias.FITS')
+master_bias_raw=[]
+for i in range(16) :
+        imarr = fits[i].data
+        master_bias_raw.append(imarr)
+fits.close()
+fits=pyfits.open(path_output+'/'+'masterbias_corr_2D.FITS')
+master_bias_corr_2D=[]
+for i in range(16) :
+        imarr = fits[i].data
+        master_bias_corr_2D.append(imarr)
+fits.close()
+
+####################loop again over bias files to check master bias substracted images####################
+for ifile in range(len(file_list)):
+
+    # access directly the fits file image
+    fits=pyfits.open(file_list[ifile])
+
+    #add image number to run
+    print(file_list[ifile])
+    frame = (file_list[ifile].partition('/MC')[0])[-13:]
+    run = run_base + '/after_master_bias/' + frame
+
+    #save variances in a table
+    var_total =  np.zeros(16)
+    mean_total = np.zeros(16)
+    var_line = np.zeros((16,im_y_size))
+    mean_line = np.zeros((16,im_y_size))
+    var_column =  np.zeros((16,im_x_size))
+    mean_column = np.zeros((16,im_x_size))
+    var_total_corr_2D =  np.zeros(16)
+    mean_total_corr_2D = np.zeros(16)
+    var_line_corr_2D = np.zeros((16,im_y_size))
+    mean_line_corr_2D = np.zeros((16,im_y_size))
+    var_column_corr_2D =  np.zeros((16,im_x_size))
+    mean_column_corr_2D = np.zeros((16,im_x_size))
     
+    #1) raw case
+    fig=plt.figure(figsize=[25,20])
+    title='Raw after master bias substraction'
+    plt.suptitle(title)
+    #create an image (fix the 0/1 index issue of the object fits)
+    image_tmp=[]
+    for i in range(nb_amp):
+        imarr = fits[i+1].data
+        imarr = imarr - master_bias_raw[i]
+        image_tmp.append(imarr)
+        #variances for image before correction
+        imarr_science = imarr[first_line:first_p_over,first_col:first_s_over]
+        #compute variances
+        var_total[i] = np.var(imarr_science)
+        mean_total[i] = np.mean(imarr_science)
+        var_line[i,:] = np.var(imarr_science,axis=1)
+        mean_line[i,:] = np.mean(imarr_science,axis=1)
+        var_column[i,:] = np.var(imarr_science,axis=0)
+        mean_column[i,:] = np.mean(imarr_science,axis=0)
+    #build image
+    image = SingleImageIR(image_tmp)
+    norm = ImageNormalize(image, interval=PercentileInterval(70.))
+    #plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
+    plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+    plt.colorbar()
+    image_txt='CCD_RawImage'
+    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+
+    #2) overscan correction
+    fig=plt.figure(figsize=[25,20])
+    title='Image after overscan corretion and master bias substraction'
+    plt.suptitle(title)
+    #create an image (fix the 0/1 index issue of the object fits)
+    image_tmp=[]
+    for i in range(nb_amp):
+        imarr = fits[i+1].data
+        ###2D correction
+        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
+        rawl=np.zeros((last_l-first_p_over-2,last_s))
+        for l in range(first_p_over+2,last_l):
+            rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
+        #####################HACK to apply here line correction#####################
+            mean_over_per_column=np.mean(rawl[:,:],axis=0)
+            #next line is the hack
+            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            linef=mean_over_per_line[:,np.newaxis]
+        # generate the 2D correction (thank's to numpy)
+        over_cor_mean=mean_over_per_column+linef
+        imarr = imarr - over_cor_mean
+        imarr = imarr - master_bias_corr_2D[i]
+        image_tmp.append(imarr)
+        #variances for image after correction     
+        imarr_science_corr_2D = imarr[first_line:first_p_over,first_col:first_s_over]
+        #compute variances
+        var_total_corr_2D[i] = np.var(imarr_science_corr_2D)
+        mean_total_corr_2D[i] = np.mean(imarr_science_corr_2D)
+        var_line_corr_2D[i,:] = np.var(imarr_science_corr_2D,axis=1)
+        mean_line_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=1)
+        var_column_corr_2D[i,:] = np.var(imarr_science_corr_2D,axis=0)
+        mean_column_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=0)
+    #build image
+    image = SingleImageIR(image_tmp)
+    norm = ImageNormalize(image, interval=PercentileInterval(70.))
+    #plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
+    plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+    plt.colorbar()
+    image_txt='CCD_RawImage_2D_corr'
+    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+
+    #store variances
+    t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
+    print(t_variance)
+    t_variance.write(output_data + run + '/' + raft + '/' + ccd + '/Variances_2D_corr.fits', overwrite=True)
+
+    fits.close()
+
+    print('free memory 2')
+    print(dir())
+    del image
+    del image_tmp
+    del imarr
+    del imarr_science
+    del imarr_science_corr_2D
+    gc.collect()
+
 sys.exit()
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 #try one image per raft ==> NOT YET WORKING
 fig,ax = plt.subplots(3,3,figsize=(15,15))
