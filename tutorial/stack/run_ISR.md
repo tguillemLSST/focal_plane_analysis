@@ -39,8 +39,7 @@ pipetask --long-log run -b $REPO -p cp_pipe/pipelines/cpBias.yaml \
 The output products will be stored in a user part of the butler as defined by the path given to the –o option (here u/tguillem/DM-30001/biasGen.full.20220829).  
 You can test that modifying cp_pipe/pipelines/cpBias.yaml produces the expected change (checking the output log).  
 Many changes can be actually done just by passing options to pipetask, but for more significant changes, a local version of the package will be necessary. In my case, I had to modify a class in the ip_isr package: so I did a fork, cloned it locally, defined it as my stack version and then I could use this version and commit my changes in Git.  
-See: https://github.com/tguillemLSST/ip_isr/blob/main/python/lsst/ip/isr/overscan.py#L49  
+See: https://github.com/tguillemLSST/ip_isr/blob/main/python/lsst/ip/isr/overscan.py#L49
 
-The reference page for calibration tasks in the stack is:
-https://pipelines.lsst.io/v/daily/modules/lsst.cp.pipe/constructing-calibrations.html
+The reference page for calibration tasks in the stack is: https://pipelines.lsst.io/v/daily/modules/lsst.cp.pipe/constructing-calibrations.html
 
