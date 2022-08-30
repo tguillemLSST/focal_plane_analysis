@@ -21,12 +21,12 @@ scons -j 4
 eups declare -r . -t tguillem
 setup cp_pipe -t tguillem
 ```
-From there, any call to cp_pipe will use your local package.
+From there, any call to cp_pipe will use your local package.  
 N.B: by default, you will not be authorized to push to the Git repository (DM property), so it is recommended to fork the repository and do your commits there.
 
 ### Run a cp_pipe task
 This is an example script using the local version of cp_pipe.
-````
+```
 #define the butler path
 export REPO=/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13159/
 #run the task
