@@ -14,8 +14,8 @@ import os
 import shutil
 import pickle
 
-outpath = "/sps/lsst/users/tguillem/web/debug/"
-#outpath = "/sps/lsst/users/tguillem/web/variances/2D_corr/itl_e2v/"
+outpath = "/sps/lsst/users/tguillem/web/debug/test/"
+#outpath = "/sps/lsst/users/tguillem/web/variances/2D_corr_mb/itl_e2v/"
 
 
 if os.path.exists(outpath):
@@ -25,18 +25,20 @@ print('outpath = ' + outpath)
 
 ###t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
 
-inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
+#inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
 #inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_fix3/13162/bias_bias_'
+inpath_base = '/sps/lsst/users/tguillem/web/batch/master_bias/v1_1D/13162/after_master_bias/bias_bias_'
+
 #exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
 exposures = ['015']
 #rafts=['R01' ,'R02' ,'R03' ,'R10' ,'R11' ,'R12' ,'R13' ,'R14' ,'R20' ,'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34' ,'R41' ,'R42' ,'R43']
 #rafts=['R14']
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
 rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
-#rafts_itl = []
-#rafts_e2v = ['R14']
+#rafts_itl = ['R42']
+#rafts_e2v = []
 ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
-#ccds=['S22']
+#ccds=['S11']
 
 variances_itl = []
 for i in range(len(exposures)):
@@ -59,6 +61,8 @@ for i in range(len(exposures)):
 var_one_exposure_e2v = []
 var_one_exposure_corr_2D_e2v = []
 ratio_var_one_exposure_corr_2D_e2v = []
+mean_one_exposure_e2v = []
+mean_one_exposure_corr_2D_e2v = []
 var_one_exposure_row_e2v = []
 var_one_exposure_row_corr_2D_e2v = []
 ratio_var_one_exposure_row_corr_2D_e2v = []
@@ -68,6 +72,8 @@ ratio_var_one_exposure_col_corr_2D_e2v = []
 for j in range(len(variances_e2v)):
     var_one_exposure = np.zeros(16)
     var_one_exposure_corr_2D = np.zeros(16)
+    mean_one_exposure = np.zeros(16)
+    mean_one_exposure_corr_2D = np.zeros(16)
     ratio_var_one_exposure_corr_2D = np.zeros(16)
     var_one_exposure_row = np.zeros(16)
     var_one_exposure_row_corr_2D = np.zeros(16)
@@ -79,6 +85,8 @@ for j in range(len(variances_e2v)):
         var_one_exposure[i]=np.sqrt(variances_e2v[j]['var_total'][i])
         var_one_exposure_corr_2D[i]=np.sqrt(variances_e2v[j]['var_total_corr_2D'][i])
         ratio_var_one_exposure_corr_2D[i]=var_one_exposure_corr_2D[i]/var_one_exposure[i]
+        mean_one_exposure[i] = variances_e2v[j]['mean_total'][i]
+        mean_one_exposure_corr_2D[i] = variances_e2v[j]['mean_total_corr_2D'][i]
         #row
         var_one_exposure_row[i]=np.sqrt(np.var(variances_e2v[j]['mean_line'][i]))
         var_one_exposure_row_corr_2D[i]=np.sqrt(np.var(variances_e2v[j]['mean_line_corr_2D'][i]))
@@ -90,6 +98,8 @@ for j in range(len(variances_e2v)):
     var_one_exposure_e2v.append(var_one_exposure)
     var_one_exposure_corr_2D_e2v.append(var_one_exposure_corr_2D)
     ratio_var_one_exposure_corr_2D_e2v.append(ratio_var_one_exposure_corr_2D)
+    mean_one_exposure_e2v.append(mean_one_exposure)
+    mean_one_exposure_corr_2D_e2v.append(mean_one_exposure_corr_2D)
     var_one_exposure_row_e2v.append(var_one_exposure_row)
     var_one_exposure_row_corr_2D_e2v.append(var_one_exposure_row_corr_2D)
     ratio_var_one_exposure_row_corr_2D_e2v.append(ratio_var_one_exposure_row_corr_2D)
@@ -102,6 +112,8 @@ for j in range(len(variances_e2v)):
 var_one_exposure_itl = []
 var_one_exposure_corr_2D_itl = []
 ratio_var_one_exposure_corr_2D_itl = []
+mean_one_exposure_itl = []
+mean_one_exposure_corr_2D_itl = []
 var_one_exposure_row_itl = []
 var_one_exposure_row_corr_2D_itl = []
 ratio_var_one_exposure_row_corr_2D_itl = []
@@ -112,6 +124,8 @@ for j in range(len(variances_itl)):
     var_one_exposure = np.zeros(16)
     var_one_exposure_corr_2D = np.zeros(16)
     ratio_var_one_exposure_corr_2D = np.zeros(16)
+    mean_one_exposure = np.zeros(16)
+    mean_one_exposure_corr_2D = np.zeros(16)
     var_one_exposure_row = np.zeros(16)
     var_one_exposure_row_corr_2D = np.zeros(16)
     ratio_var_one_exposure_row_corr_2D = np.zeros(16)
@@ -122,6 +136,10 @@ for j in range(len(variances_itl)):
         var_one_exposure[i]=np.sqrt(variances_itl[j]['var_total'][i])
         var_one_exposure_corr_2D[i]=np.sqrt(variances_itl[j]['var_total_corr_2D'][i])
         ratio_var_one_exposure_corr_2D[i]=var_one_exposure_corr_2D[i]/var_one_exposure[i]
+        mean_one_exposure[i] = variances_itl[j]['mean_total'][i]
+        mean_one_exposure_corr_2D[i] = variances_itl[j]['mean_total_corr_2D'][i]
+        #print(str(i)+': var raw = '+str(var_one_exposure[i])+' |  var 2D = '+str(var_one_exposure_corr_2D[i]))
+        #print(str(i)+': mean raw = '+str(variances_itl[j]['mean_total'][i])+' |  mean 2D = '+str(variances_itl[j]['mean_total_corr_2D'][i]))
         #row
         var_one_exposure_row[i]=np.sqrt(np.var(variances_itl[j]['mean_line'][i]))
         var_one_exposure_row_corr_2D[i]=np.sqrt(np.var(variances_itl[j]['mean_line_corr_2D'][i]))
@@ -133,6 +151,8 @@ for j in range(len(variances_itl)):
     var_one_exposure_itl.append(var_one_exposure)
     var_one_exposure_corr_2D_itl.append(var_one_exposure_corr_2D)
     ratio_var_one_exposure_corr_2D_itl.append(ratio_var_one_exposure_corr_2D)
+    mean_one_exposure_itl.append(mean_one_exposure)
+    mean_one_exposure_corr_2D_itl.append(mean_one_exposure_corr_2D)
     var_one_exposure_row_itl.append(var_one_exposure_row)
     var_one_exposure_row_corr_2D_itl.append(var_one_exposure_row_corr_2D)
     ratio_var_one_exposure_row_corr_2D_itl.append(ratio_var_one_exposure_row_corr_2D)
@@ -184,28 +204,33 @@ plt.grid(which='major', axis='both', linestyle='-', linewidth='0.5', color='grey
 plt.legend()
 plt.savefig(outpath+'ratio_var_col_corr_2D.png', bbox_inches='tight')
 
-sys.exit()
+#flatten to do 1-D histograms
+h_mean_one_exposure_e2v = list(np.concatenate(mean_one_exposure_e2v).flat)
+h_mean_one_exposure_itl = list(np.concatenate(mean_one_exposure_itl).flat)
+h_mean_one_exposure_corr_2D_e2v = list(np.concatenate(mean_one_exposure_corr_2D_e2v).flat)
+h_mean_one_exposure_corr_2D_itl = list(np.concatenate(mean_one_exposure_corr_2D_itl).flat)
+#mean_total plot
+bin_range = [-0.6,0.6]
+nbins = 100
+plt.figure()
+plt.hist(h_mean_one_exposure_e2v, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'blue')
+plt.hist(h_mean_one_exposure_itl, range=bin_range, bins=nbins, label='itl', histtype='step', color = 'red')
+#plt.ylim([0.8, 1.1])
+plt.xlabel('mean_total')
+plt.ylabel('n_amp')
+plt.grid(which='major', axis='both', linestyle='-', linewidth='0.5', color='grey')
+plt.legend()
+plt.savefig(outpath+'mean_total.png', bbox_inches='tight') 
 
-#compute variance over exposures
-var_exposures = np.zeros(16)
-var_exposures_corr_2D = np.zeros(16)
-ratio_var_exposures_corr_2D = np.zeros(16)
-for i in range(16) :
-    var_exposures_tmp =  np.zeros(len(exposures))
-    var_exposures_corr_2D_tmp =  np.zeros(len(exposures))
-    for j in range(len(exposures)):
-        var_exposures_tmp[j] = variances[j]['mean_total'][i]
-        var_exposures_corr_2D_tmp[j] = variances[j]['mean_total_corr_2D'][i]
-    var_exposures[i]=np.sqrt(np.var(var_exposures_tmp))
-    var_exposures_corr_2D[i]=np.sqrt(np.var(var_exposures_corr_2D_tmp))
-    ratio_var_exposures_corr_2D[i]=var_exposures_corr_2D[i]/var_exposures[i]
-print(var_exposures)
-print(var_exposures_corr_2D)
-print(ratio_var_exposures_corr_2D)
-
-#variance per line (debugging)
-#line
-#x=np.sqrt(np.var(variances_e2v[j]['mean_line'][i]))
-#y=np.sqrt(np.var(variances_e2v[j]['mean_line_corr_2D'][i]))
-#print(x)
-#print(y)
+#mean_total_corr_2D plot
+bin_range = [-0.6,0.6]
+nbins = 100
+plt.figure()
+plt.hist(h_mean_one_exposure_corr_2D_e2v, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'blue')
+plt.hist(h_mean_one_exposure_corr_2D_itl, range=bin_range, bins=nbins, label='itl', histtype='step', color = 'red')
+#plt.ylim([0.8, 1.1])
+plt.xlabel('mean_total_corr_2D')
+plt.ylabel('n_amp')
+plt.grid(which='major', axis='both', linestyle='-', linewidth='0.5', color='grey')
+plt.legend()
+plt.savefig(outpath+'mean_total_corr_2D.png', bbox_inches='tight') 

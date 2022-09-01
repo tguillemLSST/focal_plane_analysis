@@ -176,7 +176,7 @@ with pyfits.open(file_list[0]) as hdus:
         hdus[amp].data = image.array
         hdus[0].header['FILENAME'] = os.path.basename(outfile)
         fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True)
-print('Master bias after correction produced')
+print('Master bias from raw images produced')
 #plot
 fig=plt.figure(figsize=[25,20])
 title='CCD image: master bias'
@@ -199,7 +199,7 @@ fits.close()
 #sys.exit()
 
 #prepare corrected masterbias
-outfile = 'masterbias_corr_2D.FITS'
+#outfile = 'masterbias_corr_2D.FITS'
 images_corr_2D = []
 for i in range(16):
         images_corr_2D.append([])
@@ -279,7 +279,8 @@ for ifile in range(len(file_list)):
     #try one image per CCD
     #raw image
     fig=plt.figure(figsize=[25,20])
-    title='Master bias for PCA. Raw image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    #title='Master bias for PCA. Raw image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    title='Image per amplifier: raw (mean per amp substracted)\nFile: %s\nExposure time: %s' % (os.path.basename(file_list[ifile]),exp_time)
     plt.suptitle(title)
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
@@ -290,11 +291,12 @@ for ifile in range(len(file_list)):
         image_tmp.append(imarr)
     image = SingleImageIR(image_tmp)
     norm = ImageNormalize(image, interval=PercentileInterval(70.))
-    plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
+    #plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
+    plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower') 
     plt.colorbar()
     image_txt='CCD_RawImage'
-    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0) 
-
+    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+    
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
     plt.suptitle(title) 
@@ -403,7 +405,7 @@ for ifile in range(len(file_list)):
             #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
@@ -503,6 +505,7 @@ for ifile in range(len(file_list)):
     gc.collect()
 
 #master bias after correction
+outfile = 'masterbias_corr_2D.FITS'
 for amp in range(0,16):
     medianed_images_corr_2D[amp] = afwMath.statisticsStack(images_corr_2D[amp], statistic)
 with pyfits.open(file_list[0]) as hdus:
@@ -537,12 +540,14 @@ master_bias_raw=[]
 for i in range(16) :
         imarr = fits[i].data
         master_bias_raw.append(imarr)
+print(fits)
 fits.close()
 fits=pyfits.open(path_output+'/'+'masterbias_corr_2D.FITS')
 master_bias_corr_2D=[]
 for i in range(16) :
         imarr = fits[i].data
         master_bias_corr_2D.append(imarr)
+print(fits)
 fits.close()
 
 ####################loop again over bias files to check master bias substracted images####################
@@ -614,7 +619,7 @@ for ifile in range(len(file_list)):
         #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
