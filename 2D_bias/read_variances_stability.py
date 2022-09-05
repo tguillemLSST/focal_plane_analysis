@@ -14,7 +14,7 @@ import os
 import shutil
 import pickle
 
-outpath = "/sps/lsst/users/tguillem/web/debug/"
+outpath = "/sps/lsst/users/tguillem/web/debug/test1/2D/"
 #outpath = "/sps/lsst/users/tguillem/web/variances/2D_corr/itl_e2v/"
 
 
@@ -28,10 +28,10 @@ print('outpath = ' + outpath)
 #input file selection
 #2D row-col correction
 #inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
-#1D row correction  (by mistake)
-inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_fix3/13162/bias_bias_'
+#inpath_base = '/sps/lsst/users/tguillem/web/batch/master_bias/v1/13162/bias_bias_'
+inpath_base = '/sps/lsst/users/tguillem/web/batch/master_bias/v1/13162/after_master_bias/bias_bias_'
 
-exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
+exposures = ['000', '001', '002', '003', '004', '005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
 #exposures = ['015','016']
 #rafts=['R01' ,'R02' ,'R03' ,'R10' ,'R11' ,'R12' ,'R13' ,'R14' ,'R20' ,'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34' ,'R41' ,'R42' ,'R43']
 #rafts=['R14']
@@ -85,7 +85,7 @@ for i in range(n_itl):
     for j in range(16) :
         mean_exposures_tmp = np.zeros(n_exposures)
         for k in range(n_exposures):
-            mean_exposures_tmp[k] = variances_itl_exposures[k][i]['mean_total'][j]
+            mean_exposures_tmp[k] = variances_itl_exposures[k][i]['mean_total_corr_2D'][j]
         var_exposures_tmp = np.sqrt(np.var(mean_exposures_tmp[:]))
         var_exposures_itl.append(var_exposures_tmp)
 #print(var_exposures_itl)
@@ -101,14 +101,14 @@ for i in range(n_e2v):
     for j in range(16) :
         mean_exposures_tmp = np.zeros(n_exposures)
         for k in range(n_exposures):
-            mean_exposures_tmp[k] = variances_e2v_exposures[k][i]['mean_total'][j]
+            mean_exposures_tmp[k] = variances_e2v_exposures[k][i]['mean_total_corr_2D'][j]
         var_exposures_tmp = np.sqrt(np.var(mean_exposures_tmp[:]))
         var_exposures_e2v.append(var_exposures_tmp)
 #print(var_exposures_e2v)
 
 #var_exposures plot
-bin_range = [0,0.5]
-nbins = 50
+bin_range = [0,0.2]
+nbins = 80
 plt.figure()
 plt.hist(var_exposures_e2v, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'blue')
 plt.hist(var_exposures_itl, range=bin_range, bins=nbins, label='itl', histtype='step', color = 'red')

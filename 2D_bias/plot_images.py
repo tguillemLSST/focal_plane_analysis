@@ -400,12 +400,14 @@ for ifile in range(len(file_list)):
         ###2D correction
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
+        ###HACK
+        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
         for l in range(first_p_over+2,last_l):
             rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
             #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
@@ -614,12 +616,14 @@ for ifile in range(len(file_list)):
         ###2D correction
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
+        ###HACK
+        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
         for l in range(first_p_over+2,last_l):
             rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
         #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
