@@ -69,6 +69,7 @@ str_raft = str(sys.argv[2])
 str_all_sensors = str(sys.argv[3])
 repo_path=str(sys.argv[4])
 output_data=str(sys.argv[5])
+overscan_correction=str(sys.argv[6])
 
 run=str_run_all
 raft=str_raft
@@ -83,14 +84,27 @@ print(file_list)
 ###HACK
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_0/20220621T090913Z/dark/dark_LSSTCam_R14_S22_u_tguillem_master_dark_0_20220621T090913Z.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits']
-#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_000/MC_C_20211212_000177_R41_S21.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_001/MC_C_20211212_000178_R41_S21.fits']
-file_list=file_list[0:20]
-print(file_list)
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_015/MC_C_20211212_000192_R14_S22.fits','/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_016/MC_C_20211212_000193_R14_S22.fits']
+#file_list=file_list[0:20]
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_024/MC_C_20211212_000161_R20_S20.fits']
+#print(file_list)
 
 fits=pyfits.open(file_list[0])
 # print the image main information
 print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
 
+#restrict file list to dark of same exposure time
+file_list_selected = []
+exp_time = str(fits[0].header['DARKTIME'])
+for ifile in range(len(file_list)):
+     # access directly the fits file image
+     fits=pyfits.open(file_list[ifile])
+     exp_time = str(fits[0].header['DARKTIME'])
+     if "30.0" in exp_time:
+         file_list_selected.append(file_list[ifile])
+file_list = file_list_selected
+print(file_list)
+     
 # compute unbiased image
 #not working: FileRaw=InFile(dirall=file_list,Slow=False,verbose=False,Bias='NoCorr')
 FileUnBias=InFile(dirall=file_list,Slow=False,verbose=False,Bias=UnBias) 
@@ -104,10 +118,23 @@ amp_y_size=len(FileUnBias.all_file[0].Image[0][:,0])
 amp_x_size=len(FileUnBias.all_file[0].Image[0][0,:])
 im_y_size=first_p_over-first_line
 im_x_size=first_s_over-first_col
-
+#define the amplifier corner
+n_line_amp_corner = first_line + 200
+n_col_amp_corner = first_col + 200
 print('Number of lines read=',amp_y_size,' Number of colomns read=',amp_x_size)
 print('Number of lines in Image area=',im_y_size,' Number of colomns in Image area=',im_x_size)
 print('First line in Image area=',first_line,' First column in Image area=',first_col)
+#define CCD type 
+#rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
+rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
+ccd_e2v = True
+if raft in rafts_itl:
+     ccd_e2v = False
+print(ccd_e2v)
+#select overscan correction method
+overscan_1D = False
+if(overscan_correction=='1D'):
+     overscan_1D = True
 
 ###functions
 def SaveFig(fig,rawPlotFile,run_cur='',raft_cur='',ccd_cur='',hdu=0):
@@ -126,7 +153,45 @@ def SaveFig(fig,rawPlotFile,run_cur='',raft_cur='',ccd_cur='',hdu=0):
     plt.close(fig) 
     return
 
-def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=first_line,first_lower=first_p_over):
+def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=first_line,first_lower=first_p_over,is_e2v=ccd_e2v):
+        # Display an IR2 image , with amplifiers set at the right place ...there is a DM version which does this better...
+        # but here you are in stand alone 
+        # the default associated to the image area (pre-overscan excluded) are for e2v IR2 files 
+        #
+        col_size=first_cover-first_col
+        line_size=first_lower-first_line
+        #
+        spf=np.zeros((line_size*2,col_size*8))
+        if(is_e2v==True):
+             for i in range(16) :
+                  if i<8 :
+                       xx=i*col_size-1
+                       yy=0
+                       for x in range(first_col,first_cover) :  
+                            spf[yy+line_size:yy+2*line_size,xx+col_size-(x-first_col)]=image[i][first_line:first_lower,x]
+                  else :
+                       xx=(15-i)*col_size
+                       yy=-1
+                       for y in range(first_line,first_lower) :  
+                            spf[yy+line_size-(y-first_line),xx:xx+col_size]=image[i][y,first_col:first_cover]
+                       
+             return spf
+        else:
+             for i in range(16) :
+                  if i<8 :
+                       xx=i*col_size-1
+                       yy=0
+                       for x in range(first_col,first_cover) :  
+                            spf[yy+line_size:yy+2*line_size,xx+col_size-(x-first_col)]=image[i][first_line:first_lower,x]
+                  else :
+                       xx=(15-i)*col_size
+                       yy=0
+                       for x in range(first_col,first_cover) :
+                            spf[yy:yy+line_size,xx+col_size-(x-first_col)-1]=image[i][first_line:first_lower,x]
+                       
+             return spf
+        
+def SingleImageIR_old(image,first_col=first_col,first_cover=first_s_over,first_line=first_line,first_lower=first_p_over):
         # Display an IR2 image , with amplifiers set at the right place ...there is a DM version which does this better...
         # but here you are in stand alone 
         # the default associated to the image area (pre-overscan excluded) are for e2v IR2 files 
@@ -136,18 +201,18 @@ def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=
         #
         spf=np.zeros((line_size*2,col_size*8))
         for i in range(16) :
-            if i<8 :
+             if i<8 :
                 xx=i*col_size-1
                 yy=0
                 for x in range(first_col,first_cover) :  
                     spf[yy:yy+line_size,xx+col_size-(x-first_col)]=image[i][first_line:first_lower,x]
-            else :
+             else :
                 xx=(15-i)*col_size
                 yy=-1
                 for y in range(first_line,first_lower) :  
                     spf[yy+2*line_size-(y-first_line),xx:xx+col_size]=image[i][y,first_col:first_cover]
                     
-        return spf
+        return spf   
 ###end functions
 
 #compute a masterbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
@@ -189,7 +254,7 @@ for i in range(16) :
     mean = np.mean(imarr[first_line:first_p_over,first_col:first_s_over])
     imarr = imarr - mean
     image_tmp.append(imarr)
-print(image_tmp)
+#print(image_tmp)
 image = SingleImageIR(image_tmp)
 norm = ImageNormalize(image, interval=PercentileInterval(70.))
 plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
@@ -225,10 +290,11 @@ for ifile in range(len(file_list)):
     
     #add image number to run
     print(file_list[ifile])
-    frame = (file_list[ifile].partition('/MC')[0])[-13:]
+    #frame = (file_list[ifile].partition('/MC')[0])[-13:]
+    frame = file_list[ifile][-19:-13]
     run = run_base + '/' + frame
     print(run)
-
+    
     # plot the raw image / amplifiers 
     fig=plt.figure(figsize=[25,20])
     title='Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
@@ -380,16 +446,21 @@ for ifile in range(len(file_list)):
     mean_line = np.zeros((16,im_y_size))
     var_column =  np.zeros((16,im_x_size))
     mean_column = np.zeros((16,im_x_size))
-    var_total_corr_2D =  np.zeros(16)
+    var_amp_corner = np.zeros(16)
+    mean_amp_corner = np.zeros(16)
+    var_total_corr_2D = np.zeros(16)
     mean_total_corr_2D = np.zeros(16)
     var_line_corr_2D = np.zeros((16,im_y_size))
     mean_line_corr_2D = np.zeros((16,im_y_size))
-    var_column_corr_2D =  np.zeros((16,im_x_size))
+    var_column_corr_2D = np.zeros((16,im_x_size))
     mean_column_corr_2D = np.zeros((16,im_x_size))
+    var_amp_corner_corr_2D = np.zeros(16)
+    mean_amp_corner_corr_2D = np.zeros(16)
     for i in range(16) :
         imarr = fits[i+1].data    
         #variances for image before correction
         imarr_science = imarr[first_line:first_p_over,first_col:first_s_over]
+        #imarr_amp_corner = imarr[first_line:n_line_amp_corner,first_col:n_col_amp_corner]
         #compute variances
         var_total[i] = np.var(imarr_science)
         mean_total[i] = np.mean(imarr_science)
@@ -397,17 +468,21 @@ for ifile in range(len(file_list)):
         mean_line[i,:] = np.mean(imarr_science,axis=1)
         var_column[i,:] = np.var(imarr_science,axis=0)
         mean_column[i,:] = np.mean(imarr_science,axis=0)
+        var_amp_corner[i] = np.var(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
+        mean_amp_corner[i] = np.mean(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
+        #print('------Exploring new method')
         ###2D correction
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
         ###HACK
-        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
+        #mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
         for l in range(first_p_over+2,last_l):
             rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
             #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            if(overscan_1D==True):
+                 mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
@@ -426,6 +501,7 @@ for ifile in range(len(file_list)):
         plt.colorbar()
         image_tmp.append(imarr)
         imarr_science_corr_2D = imarr[first_line:first_p_over,first_col:first_s_over]
+        imarr_amp_corner = imarr[first_line:n_line_amp_corner,first_col:n_col_amp_corner]
         #compute variances
         var_total_corr_2D[i] = np.var(imarr_science_corr_2D)
         mean_total_corr_2D[i] = np.mean(imarr_science_corr_2D)
@@ -433,13 +509,15 @@ for ifile in range(len(file_list)):
         mean_line_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=1)
         var_column_corr_2D[i,:] = np.var(imarr_science_corr_2D,axis=0)
         mean_column_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=0)
+        var_amp_corner_corr_2D[i] = np.var(imarr_science_corr_2D[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
+        mean_amp_corner_corr_2D[i] = np.mean(imarr_science_corr_2D[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
 
         imarr_np = np.array(imarr, dtype=np.float32)
         images_corr_2D[i].append(afwImage.ImageF(imarr_np))
-
+        
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
     plt.close(fig)
-    t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
+    t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_amp_corner, mean_amp_corner, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D, var_amp_corner_corr_2D, mean_amp_corner_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'var_amp_corner', 'mean_amp_corner', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D', 'var_amp_corner_corr_2D', 'mean_amp_corner_corr_2D'), meta={'name': 'Variances'})
     print(t_variance)
     t_variance.write(output_data + run + '/' + raft + '/' + ccd + '/Variances_2D_corr.fits', overwrite=True)
     #continue
@@ -501,9 +579,9 @@ for ifile in range(len(file_list)):
     del image
     del image_tmp
     del imarr
+    del imarr_np
     del imarr_science
     del imarr_science_corr_2D
-    del imarr_np
     gc.collect()
 
 #master bias after correction
@@ -552,6 +630,27 @@ for i in range(16) :
 print(fits)
 fits.close()
 
+###load here previously-computed masterbiases
+#example: /sps/lsst/users/tguillem/web/batch/master_bias/v4_2D/13162/R11/S01/masterbias_corr_2D.FITS
+if True:
+     path_masterbias = '/sps/lsst/users/tguillem/web/batch/master_bias/v4_2D/13162/' + raft + '/' + ccd + '/'  
+     if(overscan_1D==True):
+          path_masterbias = '/sps/lsst/users/tguillem/web/batch/master_bias/v4_1D/13162/' + raft + '/' + ccd + '/'
+     masterbias_file= path_masterbias + 'masterbias.FITS'
+     masterbias_corr_2D_file= path_masterbias + 'masterbias_corr_2D.FITS'
+     #overwrite master_bias_raw and master_bias_corr_2D
+     fits=pyfits.open(masterbias_file)
+     master_bias_raw=[]
+     for i in range(16) :
+          imarr = fits[i].data
+          master_bias_raw.append(imarr)
+     fits.close()
+     fits=pyfits.open(masterbias_corr_2D_file)
+     master_bias_corr_2D=[]
+     for i in range(16) :
+          imarr = fits[i].data
+          master_bias_corr_2D.append(imarr)
+     fits.close()
 ####################loop again over bias files to check master bias substracted images####################
 for ifile in range(len(file_list)):
 
@@ -560,9 +659,9 @@ for ifile in range(len(file_list)):
 
     #add image number to run
     print(file_list[ifile])
-    frame = (file_list[ifile].partition('/MC')[0])[-13:]
+    #frame = (file_list[ifile].partition('/MC')[0])[-13:]
+    frame = file_list[ifile][-19:-13]
     run = run_base + '/after_master_bias/' + frame
-
     #save variances in a table
     var_total =  np.zeros(16)
     mean_total = np.zeros(16)
@@ -570,12 +669,16 @@ for ifile in range(len(file_list)):
     mean_line = np.zeros((16,im_y_size))
     var_column =  np.zeros((16,im_x_size))
     mean_column = np.zeros((16,im_x_size))
+    var_amp_corner = np.zeros(16)
+    mean_amp_corner = np.zeros(16) 
     var_total_corr_2D =  np.zeros(16)
     mean_total_corr_2D = np.zeros(16)
     var_line_corr_2D = np.zeros((16,im_y_size))
     mean_line_corr_2D = np.zeros((16,im_y_size))
     var_column_corr_2D =  np.zeros((16,im_x_size))
     mean_column_corr_2D = np.zeros((16,im_x_size))
+    var_amp_corner_corr_2D = np.zeros(16)
+    mean_amp_corner_corr_2D = np.zeros(16)
     
     #1) raw case
     fig=plt.figure(figsize=[25,20])
@@ -596,6 +699,8 @@ for ifile in range(len(file_list)):
         mean_line[i,:] = np.mean(imarr_science,axis=1)
         var_column[i,:] = np.var(imarr_science,axis=0)
         mean_column[i,:] = np.mean(imarr_science,axis=0)
+        var_amp_corner[i] = np.var(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
+        mean_amp_corner[i] = np.mean(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
     #build image
     image = SingleImageIR(image_tmp)
     norm = ImageNormalize(image, interval=PercentileInterval(70.))
@@ -617,13 +722,14 @@ for ifile in range(len(file_list)):
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
         ###HACK
-        mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
+        #mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)-np.mean(imarr[:,first_s_over+2:],axis=1)
         for l in range(first_p_over+2,last_l):
             rawl[l-first_p_over-2,:]=imarr[l,:]-mean_over_per_line[l]
         #####################HACK to apply here line correction#####################
             mean_over_per_column=np.mean(rawl[:,:],axis=0)
             #next line is the hack
-            #mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
+            if(overscan_1D==True):
+                 mean_over_per_column=np.mean(rawl[:,:],axis=0)-np.mean(rawl[:,:],axis=0)
             linef=mean_over_per_line[:,np.newaxis]
         # generate the 2D correction (thank's to numpy)
         over_cor_mean=mean_over_per_column+linef
@@ -639,6 +745,8 @@ for ifile in range(len(file_list)):
         mean_line_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=1)
         var_column_corr_2D[i,:] = np.var(imarr_science_corr_2D,axis=0)
         mean_column_corr_2D[i,:] = np.mean(imarr_science_corr_2D,axis=0)
+        var_amp_corner_corr_2D[i] = np.var(imarr_science_corr_2D[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
+        mean_amp_corner_corr_2D[i] = np.mean(imarr_science_corr_2D[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
     #build image
     image = SingleImageIR(image_tmp)
     norm = ImageNormalize(image, interval=PercentileInterval(70.))
@@ -649,7 +757,7 @@ for ifile in range(len(file_list)):
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
 
     #store variances
-    t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
+    t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_amp_corner, mean_amp_corner, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D, var_amp_corner_corr_2D, mean_amp_corner_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'var_amp_corner', 'mean_amp_corner', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D', 'var_amp_corner_corr_2D', 'mean_amp_corner_corr_2D'), meta={'name': 'Variances'})
     print(t_variance)
     t_variance.write(output_data + run + '/' + raft + '/' + ccd + '/Variances_2D_corr.fits', overwrite=True)
 
