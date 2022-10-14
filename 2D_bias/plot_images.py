@@ -87,23 +87,23 @@ print(file_list)
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_015/MC_C_20211212_000192_R14_S22.fits','/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_016/MC_C_20211212_000193_R14_S22.fits']
 #file_list=file_list[0:20]
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_024/MC_C_20211212_000161_R20_S20.fits']
-#print(file_list)
+##print(file_list)
 
 fits=pyfits.open(file_list[0])
 # print the image main information
 print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
 
-#restrict file list to dark of same exposure time
-file_list_selected = []
-exp_time = str(fits[0].header['DARKTIME'])
-for ifile in range(len(file_list)):
-     # access directly the fits file image
-     fits=pyfits.open(file_list[ifile])
-     exp_time = str(fits[0].header['DARKTIME'])
-     if "30.0" in exp_time:
-         file_list_selected.append(file_list[ifile])
-file_list = file_list_selected
-print(file_list)
+####restrict file list to dark of same exposure time
+#file_list_selected = []
+#exp_time = str(fits[0].header['DARKTIME'])
+#for ifile in range(len(file_list)):
+#     # access directly the fits file image
+#     fits=pyfits.open(file_list[ifile])
+#     exp_time = str(fits[0].header['DARKTIME'])
+#     if "30.0" in exp_time:
+#         file_list_selected.append(file_list[ifile])
+#file_list = file_list_selected
+#print(file_list)
      
 # compute unbiased image
 #not working: FileRaw=InFile(dirall=file_list,Slow=False,verbose=False,Bias='NoCorr')
@@ -130,11 +130,12 @@ rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
 ccd_e2v = True
 if raft in rafts_itl:
      ccd_e2v = False
-print(ccd_e2v)
+print('ccd_ee2v: ' + str(ccd_e2v))
 #select overscan correction method
 overscan_1D = False
 if(overscan_correction=='1D'):
      overscan_1D = True
+print('overscan_1D: ' + str(overscan_1D))
 
 ###functions
 def SaveFig(fig,rawPlotFile,run_cur='',raft_cur='',ccd_cur='',hdu=0):
@@ -244,7 +245,7 @@ with pyfits.open(file_list[0]) as hdus:
 print('Master bias from raw images produced')
 #plot
 fig=plt.figure(figsize=[25,20])
-title='CCD image: master bias'
+title='CCD image: master bias\n%s %s' % (raft,ccd)
 image_txt='CCD_Image_master_bias'
 plt.suptitle(title, fontsize=20)
 fits=pyfits.open(path_output+'/'+outfile)
@@ -299,7 +300,7 @@ for ifile in range(len(file_list)):
     fig=plt.figure(figsize=[25,20])
     title='Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
     image_txt='RawImagePerAmp'
-    plt.suptitle(title)
+    plt.suptitle(title, fontsize=20)
     for i in range(16) :
         norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
         plt.subplot(2,8,i+1,title=i+1)
@@ -324,7 +325,7 @@ for ifile in range(len(file_list)):
 
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
-    plt.suptitle(title)
+    plt.suptitle(title, fontsize=20)
     first_col=FileUnBias.all_file[ifile].first_col
     first_s_over=FileUnBias.all_file[ifile].first_s_over
     first_line=FileUnBias.all_file[ifile].first_line
@@ -346,8 +347,8 @@ for ifile in range(len(file_list)):
     #raw image
     fig=plt.figure(figsize=[25,20])
     #title='Master bias for PCA. Raw image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
-    title='Image per amplifier: raw (mean per amp substracted)\nFile: %s\nExposure time: %s' % (os.path.basename(file_list[ifile]),exp_time)
-    plt.suptitle(title)
+    title='Image per amplifier: raw (mean per amp substracted)\nFile: %s\nExposure time: %s\n%s %s' % (os.path.basename(file_list[ifile]),exp_time,raft,ccd)
+    plt.suptitle(title, fontsize=20)
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
     for i in range(nb_amp):
@@ -365,7 +366,7 @@ for ifile in range(len(file_list)):
     
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
-    plt.suptitle(title) 
+    plt.suptitle(title, fontsize=20) 
     image = SingleImageIR(FileUnBias.all_file[ifile].Image)
     norm = ImageNormalize(image, interval=PercentileInterval(70.))
     plt.imshow(image,cmap = 'hot',origin='lower',norm=norm)
@@ -378,7 +379,7 @@ for ifile in range(len(file_list)):
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Overscan serial per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
     image_txt='RawOverscanSerialPerAmp'
-    plt.suptitle(title)
+    plt.suptitle(title, fontsize=20)
     for i in range(16) :
         norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_s_over+1:amp_x_size], interval=PercentileInterval(70.))
         ax = plt.subplot(2,8,i+1,title=i+1)
@@ -405,7 +406,7 @@ for ifile in range(len(file_list)):
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Overscan parallel per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
     image_txt='RawOverscanParallelPerAmp'
-    plt.suptitle(title)
+    plt.suptitle(title, fontsize=20)
     for i in range(16):
         norm = ImageNormalize(fits[i+1].data[first_p_over+1:amp_y_size,first_col:first_s_over], interval=PercentileInterval(70.))
         ax = plt.subplot(2,8,i+1,title=i+1)
@@ -432,7 +433,7 @@ for ifile in range(len(file_list)):
     print('++++++++++++++++2D')
     fig=plt.figure(figsize=[25,20])
     #title='Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
-    title='Image per amplifier: direct 2D correction from overscan\nFile: %s\nExposure time: %s' % (os.path.basename(file_list[ifile]),exp_time)
+    title='Image per amplifier: direct 2D correction from overscan\nFile: %s\nExposure time: %s\n%s %s' % (os.path.basename(file_list[ifile]),exp_time,raft,ccd)
     image_txt='RawImagePerAmp_2D_corr'
     last_l=len(fits[1].data[:,0])
     last_s=len(fits[1].data[0,:])
@@ -525,7 +526,7 @@ for ifile in range(len(file_list)):
     #try one image per CCD
     #2D-corrected image
     fig=plt.figure(figsize=[25,20])
-    title='2D-corrected CCD image: direct 2D correction from overscan\nFile: %s\nFrame: %s\nExposure time: %s' % (os.path.basename(file_list[ifile]),img_type,exp_time)
+    title='2D-corrected CCD image: direct 2D correction from overscan\nFile: %s\nExposure time: %s\n%s %s' % (os.path.basename(file_list[ifile]),exp_time,raft,ccd) 
     image_txt='CCD_Image_2D_corr'
     plt.suptitle(title, fontsize=20)
     #create an image (fix the 0/1 index issue of the object fits)
@@ -598,7 +599,7 @@ print('Master bias after correction produced')
 #plot
 #2D corr
 fig=plt.figure(figsize=[25,20])
-title='2D-corrected CCD image: master bias'
+title='2D-corrected CCD image: master bias\n%s %s' % (raft,ccd)
 image_txt='CCD_Image_master_bias_2D_corr'
 plt.suptitle(title, fontsize=20)
 fits=pyfits.open(path_output+'/'+outfile)
@@ -656,7 +657,7 @@ for ifile in range(len(file_list)):
 
     # access directly the fits file image
     fits=pyfits.open(file_list[ifile])
-
+    exp_time = str(fits[0].header['DARKTIME'])
     #add image number to run
     print(file_list[ifile])
     #frame = (file_list[ifile].partition('/MC')[0])[-13:]
@@ -682,8 +683,8 @@ for ifile in range(len(file_list)):
     
     #1) raw case
     fig=plt.figure(figsize=[25,20])
-    title='Raw after master bias substraction'
-    plt.suptitle(title)
+    title='Raw after master bias substraction\nFile: %s\nExposure time: %s\n%s %s' % (os.path.basename(file_list[ifile]),exp_time,raft,ccd)
+    plt.suptitle(title, fontsize=20)
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
     for i in range(nb_amp):
@@ -712,8 +713,8 @@ for ifile in range(len(file_list)):
 
     #2) overscan correction
     fig=plt.figure(figsize=[25,20])
-    title='Image after overscan corretion and master bias substraction'
-    plt.suptitle(title)
+    title='Image after overscan corretion and master bias substraction\nFile: %s\nExposure time: %s\n%s %s' % (os.path.basename(file_list[ifile]),exp_time,raft,ccd)
+    plt.suptitle(title, fontsize=20)
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
     for i in range(nb_amp):
