@@ -86,7 +86,7 @@ print(file_list)
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_015/MC_C_20211212_000192_R14_S22.fits','/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_016/MC_C_20211212_000193_R14_S22.fits']
 #file_list=file_list[0:20]
-#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_024/MC_C_20211212_000161_R20_S20.fits']
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/storage/20211212/MC_C_20211212_000161/MC_C_20211212_000161_R12_S22.fits']
 ##print(file_list)
 
 fits=pyfits.open(file_list[0])
@@ -167,29 +167,26 @@ def SingleImageIR(image,first_col=first_col,first_cover=first_s_over,first_line=
              for i in range(16) :
                   if i<8 :
                        xx=i*col_size-1
-                       yy=0
                        for x in range(first_col,first_cover) :  
-                            spf[yy+line_size:yy+2*line_size,xx+col_size-(x-first_col)]=image[i][first_line:first_lower,x]
+                            for y in range(first_line,first_lower) :
+                                 spf[2*line_size-(y-first_line)-1,xx+col_size-(x-first_col)]=image[i][y,x]
                   else :
                        xx=(15-i)*col_size
-                       yy=-1
-                       for y in range(first_line,first_lower) :  
-                            spf[yy+line_size-(y-first_line),xx:xx+col_size]=image[i][y,first_col:first_cover]
-                       
+                       for y in range(first_line,first_lower) :
+                            spf[y-first_line,xx:xx+col_size]=image[i][y,first_col:first_cover]
              return spf
         else:
              for i in range(16) :
                   if i<8 :
                        xx=i*col_size-1
-                       yy=0
                        for x in range(first_col,first_cover) :  
-                            spf[yy+line_size:yy+2*line_size,xx+col_size-(x-first_col)]=image[i][first_line:first_lower,x]
+                            for y in range(first_line,first_lower) :
+                                 spf[2*line_size-(y-first_line)-1,xx+col_size-(x-first_col)]=image[i][y,x]
                   else :
                        xx=(15-i)*col_size
-                       yy=0
                        for x in range(first_col,first_cover) :
-                            spf[yy:yy+line_size,xx+col_size-(x-first_col)-1]=image[i][first_line:first_lower,x]
-                       
+                            for y in range(first_line,first_lower) : 
+                                 spf[y-first_line,xx+col_size-(x-first_col)-1]=image[i][y,x]
              return spf
         
 def SingleImageIR_old(image,first_col=first_col,first_cover=first_s_over,first_line=first_line,first_lower=first_p_over):
