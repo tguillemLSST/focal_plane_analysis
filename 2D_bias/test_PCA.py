@@ -4,12 +4,15 @@ import shutil
 import glob
 import numpy as np
 import lsst.eotest.sensor as sensorTest
+from lsst.eotest.fitsTools import fitsWriteto
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 import lsst.afw.image as afwImage
 import lsst.afw.math as afwMath
 import lsst.afw.detection as afwDetect
 from astropy.io import fits 
+#imutils copied for now
+import imutils as iu
 
 #job configuration
 print('Configuration arguments: ', str(sys.argv))
@@ -36,10 +39,15 @@ bot_acq_dir = repo_path + Run
 #bot_acq_dir = repo_path
 
 #flags
-run_PCA = False
+run_PCA = True
 
 #bias_files = glob.glob(os.path.join(bot_acq_dir, 'flat_bias_5*', f'MC*{det_name}.fits'))
-bias_files = glob.glob(os.path.join(bot_acq_dir, '*', f'MC*{det_name}.fits'))
+bias_files_lists = []
+selection = ['005','006','007','008','009','005','010','011','012','013','014','015','016','017','018','019']
+for i in selection:
+    bias_files_tmp = glob.glob(os.path.join(bot_acq_dir, 'bias_bias_'+i+'*', f'MC*{det_name}.fits'))
+    bias_files_lists.append(bias_files_tmp)
+bias_files = list(np.concatenate(bias_files_lists).flat)
 
 #bias_files = [glob.glob(os.path.join(bot_acq_dir, 'bias_bias_012',f'MC*{det_name}.fits')),glob.glob(os.path.join(bot_acq_dir, 'bias_bias_013',f'MC*{det_name}.fits'))]
 #bias_files = ['/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_012/MC_C_20211209_001682_R14_S12.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_013/MC_C_20211209_001683_R14_S12.fits', '/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_014/MC_C_20211209_001684_R14_S12.fits']
@@ -52,15 +60,36 @@ if os.path.exists(output_path):
     shutil.rmtree(output_path)
 os.makedirs(output_path)
 
-# Prefix to use for output files.
+#prefix to use for output files.
 file_prefix = root_dir + f'{det_name}_{Run}'
 
 print('********************')
-# Compute the PCA-based bias model, using bias_files as the input data.
+#compute the PCA-based bias model, using bias_files as the input data.
 if run_PCA==True:
     ccd_pcas = sensorTest.CCD_bias_PCA()
     pca_files = ccd_pcas.compute_pcas(bias_files, file_prefix)
+    #master_bias_files = ccd_pcas.pca_superbias(bias_files, pca_files, 'masterbias.FITS', overwrite=True,
+    #                                           statistic=afwMath.MEDIAN)
 
+#compute a superbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
+outfile = 'masterbias.FITS'
+#ccd_pcas = CCD_bias_PCA.read_model(*pca_files)
+#ccd_pcas.mean_amp_cache = None
+#amps = imutils.allAmps(bias_files[0])
+medianed_images = dict()
+statistic=afwMath.MEDIAN
+for amp in range(0,16):
+    images = []
+    for bias_file in bias_files:
+        imarr = np.array(fits.getdata(bias_file, amp+1), dtype=np.float32)
+        images.append(afwImage.ImageF(imarr))
+    medianed_images[amp] = afwMath.statisticsStack(images, statistic)
+with fits.open(bias_files[0]) as hdus:
+    for amp, image in medianed_images.items():
+        hdus[amp].data = image.array
+    hdus[0].header['FILENAME'] = os.path.basename(outfile)
+    fitsWriteto(hdus, outfile, overwrite=True)
+    
 #test overscan2D
 #ccd_pcas = sensorTest.CCD_bias_overscan2D()
 #file_prefix_local = f'{det_name}_{Run}'
@@ -74,9 +103,10 @@ if run_PCA==True:
 #pca_files = ('R14_S22_13159_pca_bias.pickle', 'R14_S22_13159_pca_bias.fits')
 #pca_files = ('R14_S12_13159_pca_bias.pickle', 'R14_S12_13159_pca_bias.fits')
 #hack: mixed PCA files
-pca_files = ('R14_S22_13159_pca_bias.pickle', 'R14_S22_13159_pca_bias.fits')
-print('PCA-files used:' + str(pca_files))
+#pca_files = ('R14_S22_13159_pca_bias.pickle', 'R14_S22_13159_pca_bias.fits')
+#print('PCA-files used:' + str(pca_files))
 ##########
+#sys.exit()
 
 # Loop over bias files and amps in each frame and compute the
 # bias-subtracted image using the PCA-bias model.  Print some stats
@@ -105,6 +135,7 @@ for i, bias_file in enumerate(bias_files):
         plt.subplot(2,8,amp,title=amp)
         plt.imshow(imarr, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
         plt.colorbar()
+        imarr = medianed_images[amp-1]  
         if not(amp%8==1) :
             figure=plt.gca()
             y_axis = figure.axes.get_yaxis()
@@ -144,22 +175,30 @@ for i, bias_file in enumerate(bias_files):
     #self.first_s_over=first_s_over
     #self.first_line=first_line
     #self.first_p_over=first_p_over
+    #e2v hack
     first_col=10
     first_s_over=522
     first_line=0
-    first_p_over=2022
+    first_p_over=2002
     last_l=2048
     last_s=576
     
-    ccd_raw = sensorTest.MaskedCCD(bias_file)
+    #ccd_raw = sensorTest.MaskedCCD(bias_file)
     #HACK: get the master-bias corrected image from eotest turning off the PCA correction
     #ccd_raw = sensorTest.MaskedCCD(bias_file, bias_frame=pca_files)
     plt.figure(figsize=[25,20])
     plt.suptitle('2D-corrected image: run '+ Run + ' detector ' + det_name + '\n for file ' + bias_file) 
     for amp in ccd_raw:
-        image = ccd_raw.bias_subtracted_image(amp)
+        image_raw = ccd_raw.unbiased_and_trimmed_image(amp)
+        imarr_raw = image_raw.getImage().array
+        #image_corr = ccd.bias_subtracted_image(amp)
+        #imarr_corr = image_corr.getImage().array[first_line:first_p_over,first_col:first_s_over]
+        image_corr = ccd.unbiased_and_trimmed_image(amp)
+        imarr_corr = image_corr.getImage().array
+        imarr_master_bias = imarr_raw - imarr_corr
+                        
+        image = ccd.bias_subtracted_image(amp)
         imarr = image.getImage().array
-        #print(imarr.shape)
         #########test 2D overscan correction
         # serial overscan
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
@@ -199,15 +238,18 @@ for i, bias_file in enumerate(bias_files):
         over_cor_mean=mean_over_per_column+linef
         #print('format over_cor_mean ' + str(over_cor_mean.shape))
         # 2D correction of the overscan : 1 overscan subtracted per line , 1 overscan subtracted per column
-        imarr -= over_cor_mean
+        ############desactivate the 2D correction
+        #imarr -= over_cor_mean
         #print(over_cor_mean[100][100])
         #print(linef[100])
         #print(mean_over_per_column[100])
         #print('===========zero')
         #imarr -= mean_over_sliding
-        
+        if(amp==3):
+            print(imarr_master_bias)
         plt.subplot(2,8,amp,title=amp)
-        plt.imshow(imarr, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+        #plt.imshow(imarr, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+        plt.imshow(imarr_master_bias, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
         plt.colorbar()
         if not(amp%8==1) :
             figure=plt.gca()
@@ -221,7 +263,7 @@ for i, bias_file in enumerate(bias_files):
             #   plt.colorbar()
     plt.savefig(output_path+"2D_corr_bias_"+frame+".png") 
     plt.close()
-
+    continue
     #2D sliding window
     #print('+++++++2D sliding window correction') 
     #plt.suptitle('2D-sliding-window-corrected image: run '+ Run + ' detector ' + det_name + '\n for file ' + bias_file) 

@@ -62,7 +62,7 @@ for raft in raft_corner:
 # 'raft' :  list of raft 
 # 'run' :  list of run , ex : ['9876','9874']  (remark : run is a string )   for all run of this raft : '*' 
 #
-run=['13145']
+run=['13144']
 #raft=raft_corner+['R11','R14','R23','R33','R42']
 raft=['R14']
 #raft=['R14','R23','R33','R42']
@@ -71,7 +71,7 @@ raft=['R14']
 #raft=['R42']+raft_corner
 #
 # You can limit the list of sensor to consider to a sub list of the total raft sensor , or comment  the line bellow to keep them all 
-all_sensors['R14']=['S12']
+all_sensors['R14']=['S22']
 #
 #directory to output data
 output_data='/sps/lsst/users/tguillem/web/debug/'
@@ -85,7 +85,7 @@ Bias_cor='2D'
 Flat=False
 ImageLabel='Bias'
 # Bias de réfrence
-image_dir='bias_bias_*'
+image_dir='flat_bias_5*'
 # Bias entre flat 
 #image_dir='flat_bias_*'
 # flux max of the bis taken before the flat ...it's not perfect as the illumination is not uniform ...
@@ -288,6 +288,8 @@ for irun in range(len(run)) :
             file_cur=[]
             #
             for jfile in range(nb_images) :                
+                if jfile==3:
+                    break
                 file_all=all_dir[jfile]+'/MC_C_*_'+raft_cur+'_'+ccd_cur+'.fits'
                 file=glob.glob(file_all)
                 print(file)
@@ -316,6 +318,11 @@ for irun in range(len(run)) :
                     yl=file_cur[0].all_file[0].first_p_over
                     nb_line=yl-yf
                     nb_col=xl-xf
+                    print('+++++++++matrix')
+                    print(xf)
+                    print(xl)
+                    print(yf)
+                    print(yl)
                     print(file_cur[0].all_file[0])
                     #  
                     if over : 
@@ -335,15 +342,16 @@ for irun in range(len(run)) :
                     #
                     start=False
                     print(str(nb_line)+' '+str(nb_col))
+                    #2002 512
                 #    
                 # === 
-                print('*********DEBUG**********')
+                #print('*********DEBUG**********')
                 for i in range(2) : 
                     for iamp in range(number_of_amp_sensor) : 
                         flux[iccd,iamp,ifile]=np.mean(np.median(file_cur[i].all_file[0].Image[iamp][yf+50:yl-20,xf+20:xl-20],axis=1),axis=0)
                         #print(file_cur[i].all_file[0].Image)
-                        print(np.shape(file_cur[i].all_file[0].Image))
-                        print(str(iamp)+' '+str(flux[iccd,iamp,ifile]))
+                        #print(np.shape(file_cur[i].all_file[0].Image))
+                        #print(str(iamp)+' '+str(flux[iccd,iamp,ifile]))
                     ifile+=1
                     if ifile%10==0 : 
                         if Flat : 
@@ -463,7 +471,8 @@ for irun in range(len(run)) :
                 #norm = ImageNormalize(image[diode_cur,i,:,:]/x, interval=PercentileInterval(99.9),stretch=SqrtStretch())
                 norm = ImageNormalize(dif[i,:,:], interval=PercentileInterval(70.))
                 plt.subplot(2,8,i+1,title=i+1)
-                plt.imshow(dif[i,:,:],cmap = 'hot',origin='lower',norm=norm)
+                #plt.imshow(dif[i,:,:],cmap = 'hot', vmin=-3, vmax=3, origin='lower',norm=norm)
+                plt.imshow(dif[i,:,:],cmap = 'hot', vmin=-3, vmax=3, origin='lower')
                 if not(i%8 ==0) :
                     figure=plt.gca()
                     y_axis = figure.axes.get_yaxis()

@@ -14,7 +14,7 @@ import os
 import shutil
 import pickle
 
-outpath = "/sps/lsst/users/tguillem/web/debug/test/var_1D/"
+outpath = "/sps/lsst/users/tguillem/web/variances/dark/1D/"
 #outpath = "/sps/lsst/users/tguillem/web/variances/2D_corr_mb/itl_e2v/"
 
 
@@ -25,20 +25,18 @@ print('outpath = ' + outpath)
 
 ###t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
 
-#inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_2D_corr/13162/bias_bias_'
-#inpath_base = '/sps/lsst/users/tguillem/web/batch/variances_fix3/13162/bias_bias_'
-inpath_base = '/sps/lsst/users/tguillem/web/batch/master_bias/v1_1D/13162/after_master_bias/bias_bias_'
+inpath_base = '/sps/lsst/users/tguillem/web/batch/overscan/dark/v4_1D/13161/after_master_bias/'
 
 #exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
-exposures = ['008']
+exposures = ['000160']
 #rafts=['R01' ,'R02' ,'R03' ,'R10' ,'R11' ,'R12' ,'R13' ,'R14' ,'R20' ,'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34' ,'R41' ,'R42' ,'R43']
 #rafts=['R14']
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
 rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
-#rafts_itl = ['R42']
-#rafts_e2v = []
-ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
-#ccds=['S11']
+rafts_itl = ['R01']
+rafts_e2v = ['R12']
+#ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
+ccds=['S22']
 
 variances_itl = []
 for i in range(len(exposures)):
@@ -69,6 +67,8 @@ ratio_var_one_exposure_row_corr_2D_e2v = []
 var_one_exposure_col_e2v = []
 var_one_exposure_col_corr_2D_e2v = []
 ratio_var_one_exposure_col_corr_2D_e2v = []
+mean_one_exposure_col_e2v = []
+mean_one_exposure_col_corr_2D_e2v = []
 for j in range(len(variances_e2v)):
     var_one_exposure = np.zeros(16)
     var_one_exposure_corr_2D = np.zeros(16)
@@ -255,7 +255,7 @@ plt.legend()
 plt.savefig(outpath+'var_total.png', bbox_inches='tight') 
 
 #var_total_corr_2D plot
-bin_range = [3,7]
+bin_range = [0,7]
 nbins = 100
 plt.figure()
 plt.hist(h_var_one_exposure_corr_2D_e2v, range=bin_range, bins=nbins, label='e2v', histtype='step', color = 'blue')

@@ -58,6 +58,7 @@ ccd='S21'
 #directory='dark_dark_*'
 directory1='dark_dark_*'
 directory2='bias_bias_*'
+#directory2='bias_*'
 #file='MC_C_*_'+raft+'_'+ccd+'.fits'
 #file_to_read='/sps/lsst/groups/FocalPlane/SLAC/run5/'+run+'/'+directory+'/'+file
 
@@ -104,6 +105,8 @@ print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
 #         file_list_selected.append(file_list[ifile])
 #file_list = file_list_selected
 #print(file_list)
+#hack because of memeory issue
+file_list = file_list[0:39]
      
 # compute unbiased image
 #not working: FileRaw=InFile(dirall=file_list,Slow=False,verbose=False,Bias='NoCorr')
@@ -444,6 +447,10 @@ for ifile in range(len(file_list)):
     mean_line = np.zeros((16,im_y_size))
     var_column =  np.zeros((16,im_x_size))
     mean_column = np.zeros((16,im_x_size))
+    var_line_overscan = np.zeros((16,im_y_size))
+    mean_line_overscan = np.zeros((16,im_y_size))
+    var_column_overscan =  np.zeros((16,im_x_size))
+    mean_column_overscan = np.zeros((16,im_x_size))
     var_amp_corner = np.zeros(16)
     mean_amp_corner = np.zeros(16)
     var_total_corr_2D = np.zeros(16)
@@ -452,12 +459,18 @@ for ifile in range(len(file_list)):
     mean_line_corr_2D = np.zeros((16,im_y_size))
     var_column_corr_2D = np.zeros((16,im_x_size))
     mean_column_corr_2D = np.zeros((16,im_x_size))
+    var_line_corr_2D_overscan = np.zeros((16,im_y_size))
+    mean_line_corr_2D_overscan = np.zeros((16,im_y_size))
+    var_column_corr_2D_overscan = np.zeros((16,im_x_size))
+    mean_column_corr_2D_overscan = np.zeros((16,im_x_size))
     var_amp_corner_corr_2D = np.zeros(16)
     mean_amp_corner_corr_2D = np.zeros(16)
     for i in range(16) :
         imarr = fits[i+1].data    
         #variances for image before correction
         imarr_science = imarr[first_line:first_p_over,first_col:first_s_over]
+        imarr_overscan_serial = imarr[first_line:first_p_over,first_s_over+1:amp_x_size]
+        imarr_overscan_parallel = imarr[first_p_over+1:amp_y_size,first_col:first_s_over]
         #imarr_amp_corner = imarr[first_line:n_line_amp_corner,first_col:n_col_amp_corner]
         #compute variances
         var_total[i] = np.var(imarr_science)
@@ -466,9 +479,15 @@ for ifile in range(len(file_list)):
         mean_line[i,:] = np.mean(imarr_science,axis=1)
         var_column[i,:] = np.var(imarr_science,axis=0)
         mean_column[i,:] = np.mean(imarr_science,axis=0)
+        var_line_overscan[i,:] = np.var(imarr_overscan_serial,axis=1)
+        mean_line_overscan[i,:] = np.mean(imarr_overscan_serial,axis=1)
+        var_column_overscan[i,:] = np.var(imarr_overscan_parallel,axis=0)
+        mean_column_overscan[i,:] = np.mean(imarr_overscan_parallel,axis=0)
         var_amp_corner[i] = np.var(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
         mean_amp_corner[i] = np.mean(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
-        #print('------Exploring new method')
+        print('------Checking overscan')
+        print(mean_line_overscan[i])
+        print(mean_column_overscan[i])
         ###2D correction
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
@@ -630,7 +649,7 @@ fits.close()
 
 ###load here previously-computed masterbiases
 #example: /sps/lsst/users/tguillem/web/batch/master_bias/v4_2D/13162/R11/S01/masterbias_corr_2D.FITS
-if True:
+if False:
      path_masterbias = '/sps/lsst/users/tguillem/web/batch/master_bias/v4_2D/13162/' + raft + '/' + ccd + '/'  
      if(overscan_1D==True):
           path_masterbias = '/sps/lsst/users/tguillem/web/batch/master_bias/v4_1D/13162/' + raft + '/' + ccd + '/'

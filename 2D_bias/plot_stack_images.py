@@ -47,7 +47,7 @@ UnBias='2D'
 #list of files
 run='13161'
 raft='R14'
-ccd='S21'
+ccd='S22'
 #directory='dark_dark_*'
 directory1='dark_dark_*'
 directory2='bias_bias_*'
@@ -81,14 +81,28 @@ print(file_list)
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13151/dark_bias_032/MC_C_20211209_001702_R14_S22.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13151/bias_bias_009/MC_C_20211209_001679_R12_S22.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_no_bias_2/20220624T122005Z/cpDarkIsr/20211212/MC_C_20211212_000169/cpDarkIsr_LSSTCam_unknown_MC_C_20211212_000169_R14_S22_u_tguillem_master_dark_no_bias_2_20220624T122005Z.fits']
-file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_no_bias_3/20220624T123125Z/cpDarkIsr/20211212/MC_C_20211212_000169/cpDarkIsr_LSSTCam_unknown_MC_C_20211212_000169_R14_S22_u_tguillem_master_dark_no_bias_3_20220624T123125Z.fits']
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_no_bias_3/20220624T123125Z/cpDarkIsr/20211212/MC_C_20211212_000169/cpDarkIsr_LSSTCam_unknown_MC_C_20211212_000169_R14_S22_u_tguillem_master_dark_no_bias_3_20220624T123125Z.fits']
+#file_list=['/sps/lsst/groups/auxtel/softs/shared/auxteldm_gen3/data/LATISS/raw/all/raw/20210216/AT_O_20210216_000192/raw_LATISS_empty~empty_AT_O_20210216_000192_RXX_S00_LATISS_raw_all.fits']
+#file_list=['/sps/lsst/groups/auxtel/softs/shared/auxteldm_gen3/data/u/czw/DM-28920/biasGen.20210702a/20210702T215049Z/bias/bias_LATISS_RXX_S00_u_czw_DM-28920_biasGen_20210702a_20210702T215049Z.fits']
+#file_list=['/sps/lsst/groups/auxtel/softs/shared/auxteldm_gen3/data/u/tguillem/cpTests_20220708a/20220712T131434Z/cpDarkIsr/20210216/AT_O_20210216_000081/cpDarkIsr_LATISS_empty~empty_AT_O_20210216_000081_RXX_S00_u_tguillem_cpTests_20220708a_20220712T131434Z.fits']
+#raw
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13159/u/tguillem/DM-30001/biasGen.full.20220822a/20220822T124426Z/cpBiasProc/20211212/MC_C_20211212_000086/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000086_R14_S22_u_tguillem_DM-30001_biasGen_full_20220822a_20220822T124426Z.fits']
+#row
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13159/u/tguillem/DM-30001/biasGen.full.20220822b/20220822T131304Z/cpBiasProc/20211212/MC_C_20211212_000086/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000086_R14_S22_u_tguillem_DM-30001_biasGen_full_20220822b_20220822T131304Z.fits']
+#2D
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13159/u/tguillem/DM-30001/biasGen.full.20220822d/20220822T133828Z/cpBiasProc/20211212/MC_C_20211212_000086/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000086_R14_S22_u_tguillem_DM-30001_biasGen_full_20220822d_20220822T133828Z.fits']
+#master bias
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13162/u/tguillem/DM-30001/biasGen.full.20220907a/20220907T064538Z/bias/bias_LSSTCam_R14_S22_u_tguillem_DM-30001_biasGen_full_20220907a_20220907T064538Z.fits']
+#file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13161/u/tguillem/DM-30001/biasCorr.20221013a/20221013T090258Z/cpBiasProc/20211212/MC_C_20211212_000161/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000161_R14_S22_u_tguillem_DM-30001_biasCorr_20221013a_20221013T090258Z.fits']
+file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/all_runs/13161/u/tguillem/DM-30001/biasCorr.20221013a/20221018T113450Z/cpBiasProc/20211212/MC_C_20211212_000161/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000161_R12_S22_u_tguillem_DM-30001_biasCorr_20221013a_20221018T113450Z.fits']
 
 print(file_list)
 fits=pyfits.open(file_list[0])
 # print the image main information
 print(fits)
 print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
-r=fits[0].header['DETSEC'][1:-1].split(',')
+#r=fits[0].header['DETSEC'][1:-1].split(',')
+r=fits[0].header['DETSIZE'][1:-1].split(',')
 x=r[0].split(':')
 y=r[1].split(':')
 #
@@ -167,6 +181,7 @@ for ifile in range(len(file_list)):
     
     # acces directly the fits file image 
     fits=pyfits.open(file_list[ifile])
+    print(fits[1].data)
     # print the image main information 
     ###print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
     ###exp_time = str(fits[0].header['DARKTIME'])
@@ -180,27 +195,58 @@ for ifile in range(len(file_list)):
     frame = (file_list[ifile].partition('/MC')[0])[-13:]
     run = run_base + '/' + frame
     print(run)
+    
+    ###HACK for postISR CCD image
+    fig=plt.figure(figsize=[25,20])
+    title='Image :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    image_txt='RawImage'
+    plt.suptitle(title)
+    #print(fits[1].data)
+    #print(fits[2].data)
+    #print(fits[3].data)
+    #norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
+    norm = ImageNormalize(fits[1].data[:,:], interval=PercentileInterval(70.))
+    #plt.subplot(2,8,i+1,title=i+1)
+    #plt.imshow(fits[1].data[:,:],cmap = 'hot',origin='lower',norm=norm)
+    #plt.imshow(fits[1].data[first_line:first_p_over,first_col:first_s_over], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+    plt.imshow(fits[1].data[:,:], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+    #    #plt.imshow(fits[1].data[:,:], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+    #    if not(i%8 ==0) :
+    #        figure=plt.gca()
+    #        y_axis = figure.axes.get_yaxis()
+    #        y_axis.set_visible(False)
+    plt.colorbar()
+    #save also plots separately
+    ###for i in range(16) :
+    ###    norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
+    ###    fig_amp=plt.figure()
+    ###    plt.imshow(fits[i+1].data[first_line:first_p_over,first_col:first_s_over],cmap = 'hot',origin='lower',norm=norm)
+    ###    plt.colorbar()
+    ###    #SaveFig(fig_amp,image_txt+'_amp_'+str(i+1),run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+    plt.close()
+    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+    sys.exit()
 
     # plot the raw image / amplifiers 
     fig=plt.figure(figsize=[25,20])
     title='Image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
     image_txt='RawImagePerAmp'
     plt.suptitle(title)
-    #for i in range(16) :
-    print(fits[1].data)
-    print(fits[2].data)
-    print(fits[3].data)
-    #norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
-    norm = ImageNormalize(fits[1].data[:,:], interval=PercentileInterval(70.))
-    #plt.subplot(2,8,i+1,title=i+1)
-    plt.imshow(fits[1].data[:,:],cmap = 'hot',origin='lower',norm=norm)
-    #plt.imshow(fits[1].data[first_line:first_p_over,first_col:first_s_over], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
-    #plt.imshow(fits[1].data[:,:], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
-    #if not(i%8 ==0) :
-    #    figure=plt.gca()
-    #    y_axis = figure.axes.get_yaxis()
-    #    y_axis.set_visible(False)
-    plt.colorbar()
+    for i in range(16) :
+        #print(fits[1].data)
+        #print(fits[2].data)
+        #print(fits[3].data)
+        #norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
+        norm = ImageNormalize(fits[i+1].data[:,:], interval=PercentileInterval(70.))
+        plt.subplot(2,8,i+1,title=i+1)
+        plt.imshow(fits[i+1].data[:,:],cmap = 'hot',origin='lower',norm=norm)
+        #plt.imshow(fits[1].data[first_line:first_p_over,first_col:first_s_over], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+        #plt.imshow(fits[1].data[:,:], vmin=-5, vmax=5, cmap = 'hot', origin='lower')
+        if not(i%8 ==0) :
+            figure=plt.gca()
+            y_axis = figure.axes.get_yaxis()
+            y_axis.set_visible(False)
+        plt.colorbar()
     #save also plots separately
     ###for i in range(16) :
     ###    norm = ImageNormalize(fits[i+1].data[first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
@@ -215,29 +261,30 @@ for ifile in range(len(file_list)):
     nb_amp=16
 
     fig=plt.figure(figsize=[25,20])
-    title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
-    plt.suptitle(title)
-    first_col=FileUnBias.all_file[ifile].first_col
-    first_s_over=FileUnBias.all_file[ifile].first_s_over
-    first_line=FileUnBias.all_file[ifile].first_line
-    first_p_over=FileUnBias.all_file[ifile].first_p_over
+    #title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    #plt.suptitle(title)
+    #first_col=FileUnBias.all_file[ifile].first_col
+    #first_s_over=FileUnBias.all_file[ifile].first_s_over
+    #first_line=FileUnBias.all_file[ifile].first_line
+    #first_p_over=FileUnBias.all_file[ifile].first_p_over
     
-    for i in range(nb_amp) :
-        norm = ImageNormalize(FileUnBias.all_file[ifile].Image[i][first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
-        plt.subplot(2,8,i+1,title=i+1)
-        plt.imshow(FileUnBias.all_file[ifile].Image[i][first_line:first_p_over,first_col:first_s_over],cmap = 'hot',origin='lower',norm=norm)
-        if not(i%8 ==0) :
-            figure=plt.gca()
-            y_axis = figure.axes.get_yaxis()
-            y_axis.set_visible(False)
-        plt.colorbar()
-    image_txt='UnbiasedImagePerAmp'
-    SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+    #for i in range(nb_amp) :
+    #    norm = ImageNormalize(FileUnBias.all_file[ifile].Image[i][first_line:first_p_over,first_col:first_s_over], interval=PercentileInterval(70.))
+    #    plt.subplot(2,8,i+1,title=i+1)
+    #    plt.imshow(FileUnBias.all_file[ifile].Image[i][first_line:first_p_over,first_col:first_s_over],cmap = 'hot',origin='lower',norm=norm)
+    #    if not(i%8 ==0) :
+    #        figure=plt.gca()
+    #        y_axis = figure.axes.get_yaxis()
+    #        y_axis.set_visible(False)
+    #    plt.colorbar()
+    #image_txt='UnbiasedImagePerAmp'
+    #SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
 
     #try one image per CCD
     #raw image
     fig=plt.figure(figsize=[25,20])
-    title='Master bias for PCA. Raw image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    #title='Master bias for PCA. Raw image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
+    title='Auxtel bias'
     plt.suptitle(title)
     #create an image (fix the 0/1 index issue of the object fits)
     image_tmp=[]
@@ -249,6 +296,7 @@ for ifile in range(len(file_list)):
     plt.colorbar()
     image_txt='CCD_RawImage'
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0) 
+    continue
 
     fig=plt.figure(figsize=[25,20])
     title='Master bias for PCA. Unbiased image per amplifier :  (70%s percentile) \n%s' % ('%',os.path.basename(file_list[ifile]))
