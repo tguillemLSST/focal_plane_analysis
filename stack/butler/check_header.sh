@@ -1,0 +1,1 @@
+fitsheader /sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/main_20230111/u/tguillem/DM-37455/run_13162_2D_my_MB.20230119c/20230119T160123Z/cpBiasProc/20211212/MC_C_20211212_000161/cpBiasProc_LSSTCam_unknown_MC_C_20211212_000161_R14_S22_u_tguillem_DM-37455_run_13162_2D_my_MB_20230119c_20230119T160123Z.fits | grep CALIB
