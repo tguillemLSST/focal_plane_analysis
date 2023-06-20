@@ -56,7 +56,7 @@ run='13161'
 raft='R14'
 ccd='S21'
 #directory='dark_dark_*'
-directory1='dark_dark_*'
+directory1='dark_dark_xxxxxxxxxxxxx*'
 directory2='bias_bias_*'
 #directory2='bias_*'
 #file='MC_C_*_'+raft+'_'+ccd+'.fits'
@@ -80,13 +80,16 @@ file_to_read1='/sps/lsst/groups/FocalPlane/SLAC/run5/'+run+'/'+directory1+'/'+fi
 file_to_read2='/sps/lsst/groups/FocalPlane/SLAC/run5/'+run+'/'+directory2+'/'+file
 file_list=glob.glob(file_to_read1)+glob.glob(file_to_read2)
 file_list.sort()
+#HACK
+file_to_read=repo_path+run+'/'+directory2+'/'+file
+file_list=glob.glob(file_to_read)
 print(file_list)
 
 ###HACK
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/test_master_dark_3/u/tguillem/master_dark_0/20220621T090913Z/dark/dark_LSSTCam_R14_S22_u_tguillem_master_dark_0_20220621T090913Z.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13161/dark_dark_032/MC_C_20211212_000169_R14_S22.fits']
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_015/MC_C_20211212_000192_R14_S22.fits','/sps/lsst/groups/FocalPlane/SLAC/run5/13162/bias_bias_016/MC_C_20211212_000193_R14_S22.fits']
-#file_list=file_list[0:20]
+file_list=file_list[0:2]
 #file_list=['/sps/lsst/groups/FocalPlane/SLAC/storage/20211212/MC_C_20211212_000161/MC_C_20211212_000161_R12_S22.fits']
 ##print(file_list)
 
@@ -105,8 +108,9 @@ print(fits[0].header.tostring(sep='\n', endcard=True, padding=True))
 #         file_list_selected.append(file_list[ifile])
 #file_list = file_list_selected
 #print(file_list)
-#hack because of memeory issue
-file_list = file_list[0:39]
+#hack because of memory issue
+#file_list = file_list[0:2]
+#print(file_list)
      
 # compute unbiased image
 #not working: FileRaw=InFile(dirall=file_list,Slow=False,verbose=False,Bias='NoCorr')
@@ -127,6 +131,8 @@ n_col_amp_corner = first_col + 200
 print('Number of lines read=',amp_y_size,' Number of colomns read=',amp_x_size)
 print('Number of lines in Image area=',im_y_size,' Number of colomns in Image area=',im_x_size)
 print('First line in Image area=',first_line,' First column in Image area=',first_col)
+print('First line in overscan area=',first_p_over,' First column in overscan area=',first_s_over)
+#sys.exit()
 #define CCD type 
 #rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
@@ -218,31 +224,64 @@ def SingleImageIR_old(image,first_col=first_col,first_cover=first_s_over,first_l
 
 #compute a masterbias (adapted from eotest/python/lsst/eotest/sensor/ccd_bias_pca.py)
 outfile = 'masterbias.FITS'
+outfile2 = 'masterbias_rms.FITS'
 path_output = os.path.join(output_data,run,raft,ccd)
 if os.path.exists(path_output):
          shutil.rmtree(path_output)
 os.makedirs(path_output)
 
+np.set_printoptions(threshold=np.inf)
 images = []
 for i in range(16):
             images.append([])
 medianed_images = dict()
+rmsed_images = dict()
 statistic=afwMath.MEAN
+statistic2=afwMath.STDEV
+#STDEV: variance formula 1/(n-1)*sum((xi-mu)^2)
 for ifile in range(len(file_list)):
     fits=pyfits.open(file_list[ifile])
-    for i in range(0,16):
+    for i in range(16):
         imarr = fits[i+1].data
         imarr_np = np.array(imarr, dtype=np.float32)
         images[i].append(afwImage.ImageF(imarr_np))
     fits.close()
-for i in range(0,16):
-    medianed_images[i] = afwMath.statisticsStack(images[i], statistic)
+for i in range(16):
+     medianed_images[i] = afwMath.statisticsStack(images[i], statistic)
+     rmsed_images[i] = afwMath.statisticsStack(images[i], statistic2)
+     #print(medianed_images[i])
+     #print('---')
+     #print(rmsed_images[i])
+#2nd loop to correctly estimate the rms
+###not needed
+#for ifile in range(len(file_list)):
+#     fits=pyfits.open(file_list[ifile])
+#     for i in range(0,1):
+#          imarr = fits[i+1].data
+#          imarr_np = np.array(imarr, dtype=np.float32) - medianed_images[i].array
+#          images_corr[i].append(afwImage.ImageF(imarr_np))
+#          print('---'+str(ifile))
+#          print(imarr_np)
+#     fits.close()
+#for i in range(0,1):
+#     rmsed_images[i] = afwMath.statisticsStack(images_corr[i], statistic2)
+#     print(medianed_images[i])
+#     print('---')
+###     print(rmsed_images[i])
+#write outputs
 with pyfits.open(file_list[0]) as hdus:
     for amp, image in medianed_images.items():
         hdus[amp].data = image.array
         hdus[0].header['FILENAME'] = os.path.basename(outfile)
         fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True)
+with pyfits.open(file_list[0]) as hdus2:
+    for amp2, image2 in rmsed_images.items():
+        hdus2[amp2].data = image2.array
+        hdus2[0].header['FILENAME'] = os.path.basename(outfile2)
+        fitsWriteto(hdus2, path_output+'/'+outfile2, overwrite=True)        
 print('Master bias from raw images produced')
+#sys.exit()
+
 #plot
 fig=plt.figure(figsize=[25,20])
 title='CCD image: master bias\n%s %s' % (raft,ccd)
@@ -270,7 +309,7 @@ images_corr_2D = []
 for i in range(16):
         images_corr_2D.append([])
 medianed_images_corr_2D = dict() 
-
+medianed_images_corr_2D_rms = dict()
 run_base = run
 #plots
 print(len(file_list))
@@ -401,6 +440,8 @@ for ifile in range(len(file_list)):
         #SaveFig(fig_amp,image_txt+'_amp_'+str(i+1),run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
         plt.close(fig)
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
+    #print('OVERSCAN-----------')
+    #continue
 
     # plot the raw image / amplifiers 
     fig=plt.figure(figsize=[25,20])
@@ -485,9 +526,9 @@ for ifile in range(len(file_list)):
         mean_column_overscan[i,:] = np.mean(imarr_overscan_parallel,axis=0)
         var_amp_corner[i] = np.var(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
         mean_amp_corner[i] = np.mean(imarr_science[first_line:n_line_amp_corner,first_col:n_col_amp_corner])
-        print('------Checking overscan')
-        print(mean_line_overscan[i])
-        print(mean_column_overscan[i])
+        #print('------Checking overscan')
+        #print(mean_line_overscan[i])
+        #print(mean_column_overscan[i])
         ###2D correction
         mean_over_per_line=np.mean(imarr[:,first_s_over+2:],axis=1)
         rawl=np.zeros((last_l-first_p_over-2,last_s))
@@ -535,7 +576,7 @@ for ifile in range(len(file_list)):
     SaveFig(fig,image_txt,run_cur=run,raft_cur=raft,ccd_cur=ccd,hdu=0)
     plt.close(fig)
     t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_amp_corner, mean_amp_corner, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D, var_amp_corner_corr_2D, mean_amp_corner_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'var_amp_corner', 'mean_amp_corner', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D', 'var_amp_corner_corr_2D', 'mean_amp_corner_corr_2D'), meta={'name': 'Variances'})
-    print(t_variance)
+    #print(t_variance)
     t_variance.write(output_data + run + '/' + raft + '/' + ccd + '/Variances_2D_corr.fits', overwrite=True)
     #continue
 
@@ -603,13 +644,20 @@ for ifile in range(len(file_list)):
 
 #master bias after correction
 outfile = 'masterbias_corr_2D.FITS'
+outfile2 = 'masterbias_corr_2D_rms.FITS'
 for amp in range(0,16):
-    medianed_images_corr_2D[amp] = afwMath.statisticsStack(images_corr_2D[amp], statistic)
+     medianed_images_corr_2D[amp] = afwMath.statisticsStack(images_corr_2D[amp], statistic)
+     medianed_images_corr_2D_rms[amp] = afwMath.statisticsStack(images_corr_2D[amp], statistic2)
 with pyfits.open(file_list[0]) as hdus:
-    for amp, image in medianed_images_corr_2D.items():
-        hdus[amp].data = image.array
-        hdus[0].header['FILENAME'] = os.path.basename(outfile)
-        fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True) 
+     for amp, image in medianed_images_corr_2D.items():
+          hdus[amp].data = image.array
+          hdus[0].header['FILENAME'] = os.path.basename(outfile)
+          fitsWriteto(hdus, path_output+'/'+outfile, overwrite=True) 
+with pyfits.open(file_list[0]) as hdus2:
+     for amp, image in medianed_images_corr_2D_rms.items():
+          hdus2[amp].data = image.array
+          hdus2[0].header['FILENAME'] = os.path.basename(outfile2)
+          fitsWriteto(hdus2, path_output+'/'+outfile2, overwrite=True)
 print('Master bias after correction produced')
 
 #plot
@@ -630,6 +678,7 @@ plt.imshow(image, vmin=-5, vmax=5, cmap = 'hot', origin='lower')
 plt.colorbar()
 SaveFig(fig,image_txt,run_cur=run_base,raft_cur=raft,ccd_cur=ccd,hdu=0)
 fits.close()
+#sys.exit()
 
 #store master bias images
 fits=pyfits.open(path_output+'/'+'masterbias.FITS')
@@ -790,31 +839,3 @@ for ifile in range(len(file_list)):
     gc.collect()
 
 sys.exit()
-
-#try one image per raft ==> NOT YET WORKING
-fig,ax = plt.subplots(3,3,figsize=(15,15))
-line=2
-for row in ax:
-    column=0
-    for col in row:
-        i=column+3*line
-        print(i)
-        out1=SingleImageIR(FileUnBias.all_file[ifile].Image[i])
-        norm = ImageNormalize(out1, interval=PercentileInterval(80.))
-        #norm = ImageNormalize(out1,  stretch=HistEqStretch(out1))
-        im = col.imshow(out1,cmap = 'hot',origin='lower',norm=norm)
-        col.set_title(os.path.basename(file_list[i]))
-        divider = make_axes_locatable(col)
-        cax = divider.append_axes('right', size='5%', pad=0.05)
-        if not(i%3 ==0) :
-            #figure=plt.gca()
-            y_axis = col.axes.get_yaxis()
-            y_axis.set_visible(False)
-            
-        fig.colorbar(im, cax=cax, orientation='vertical')
-        column+=1
-        del(out1)
-        del(norm)
-    line-=1
-plt.show()
-SaveFig(fig,'CCDUnbiasedImage',run_cur=run,raft_cur=raft)
