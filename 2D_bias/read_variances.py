@@ -14,7 +14,7 @@ import os
 import shutil
 import pickle
 
-outpath = "/sps/lsst/users/tguillem/web/variances/dark/1D/"
+outpath = "/sps/lsst/users/tguillem/web/variances/stack/yellow_corners/"
 #outpath = "/sps/lsst/users/tguillem/web/variances/2D_corr_mb/itl_e2v/"
 
 
@@ -25,7 +25,7 @@ print('outpath = ' + outpath)
 
 ###t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
 
-inpath_base = '/sps/lsst/users/tguillem/web/batch/overscan/dark/v4_1D/13161/after_master_bias/'
+inpath_base = '/sps/lsst/users/tguillem/web/debug/yellow_corners/results/'
 
 #exposures = ['005', '006', '007', '008', '009', '010', '011', '012', '013', '014', '015', '016', '017', '018', '019']
 exposures = ['000160']
@@ -33,8 +33,8 @@ exposures = ['000160']
 #rafts=['R14']
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
 rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
-rafts_itl = ['R01']
-rafts_e2v = ['R12']
+rafts_itl = []
+rafts_e2v = ['R14']
 #ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
 ccds=['S22']
 
@@ -42,7 +42,7 @@ variances_itl = []
 for i in range(len(exposures)):
     for j in range(len(rafts_itl)):
         for k in range(len(ccds)):
-            inpath = inpath_base + exposures[i] + '/' + rafts_itl[j] + '/' + ccds[k] + '/Variances_2D_corr.fits'
+            inpath = inpath_base + '/Variances_'+ rafts_itl[j] + '_' + ccds[k] + '.fits'
             variance_itl = Table.read(inpath)
             variances_itl.append(variance_itl)
                     
@@ -50,7 +50,7 @@ variances_e2v = []
 for i in range(len(exposures)):
     for j in range(len(rafts_e2v)):
         for k in range(len(ccds)):
-            inpath = inpath_base + exposures[i] + '/' + rafts_e2v[j] + '/' + ccds[k] + '/Variances_2D_corr.fits'
+            inpath = inpath_base + '/Variances_'+ rafts_e2v[j] + '_' + ccds[k] + '.fits'
             variance_e2v = Table.read(inpath)
             variances_e2v.append(variance_e2v)            
 

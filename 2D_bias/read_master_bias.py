@@ -15,9 +15,8 @@ import shutil
 import pickle
 import gc
 
-#outpath = "/sps/lsst/users/tguillem/web/debug/test/"
-outpath = "/sps/lsst/users/tguillem/web/master_bias/1D/itl_e2v/"
-
+#outpath = "/sps/lsst/users/tguillem/web/by_hand/plots/master_bias/2D/13162/"
+outpath = "/sps/lsst/users/tguillem/web/debug/mess/"
 if os.path.exists(outpath):
     shutil.rmtree(outpath)
 os.makedirs(outpath)
@@ -25,14 +24,14 @@ print('outpath = ' + outpath)
 
 ###t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, var_total_corr_2D, mean_total_corr_2D, var_line_corr_2D, mean_line_corr_2D, var_column_corr_2D, mean_column_corr_2D], names=('var_total', 'mean_total', 'var_line', 'mean_line','var_column', 'mean_column', 'var_total_corr_2D', 'mean_total_corr_2D', 'var_line_corr_2D', 'mean_line_corr_2D', 'var_column_corr_2D', 'mean_column_corr_2D'), meta={'name': 'Variances'})
 
-inpath_base = '/sps/lsst/users/tguillem/web/batch/master_bias/v1_1D/13162/'
+inpath_base = '/sps/lsst/users/tguillem/web/by_hand/master_bias/fix1/2D/13162/'
 
 rafts_itl = ['R01' ,'R02' ,'R03' ,'R10' ,'R20', 'R41' ,'R42' ,'R43']
-#rafts_itl = ['R01']
+rafts_itl = ['R01']
 rafts_e2v = ['R11' ,'R12' ,'R13' ,'R14', 'R21' ,'R22' ,'R23' ,'R24' ,'R30' ,'R31' ,'R32' ,'R33' ,'R34']
-#rafts_e2v = ['R11']
+rafts_e2v = ['R11']
 ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
-#ccds=['S00']
+ccds=['S00']
 
 #science image definitions
 first_line_itl=1
@@ -56,7 +55,7 @@ for j in range(len(rafts_itl)):
             imarr = fits[i].data
             master_bias_itl.append(imarr)
         fits.close()
-        inpath = inpath_base + '/' + rafts_itl[j] + '/' + ccds[k] + '/masterbias_corr_2D.FITS'
+        inpath = inpath_base + '/' + rafts_itl[j] + '/' + ccds[k] + '/masterbias_rms.FITS'
         fits=pyfits.open(inpath)
         for i in range(16) :
             imarr = fits[i].data
@@ -73,7 +72,7 @@ for j in range(len(rafts_e2v)):
             imarr = fits[i].data
             master_bias_e2v.append(imarr)
         fits.close()
-        inpath = inpath_base + '/' + rafts_e2v[j] + '/' + ccds[k] + '/masterbias_corr_2D.FITS'
+        inpath = inpath_base + '/' + rafts_e2v[j] + '/' + ccds[k] + '/masterbias_rms.FITS'
         fits=pyfits.open(inpath)
         for i in range(16) :
             imarr = fits[i].data
