@@ -84,7 +84,7 @@ rafts=[str_raft]
 ccds=[str_all_sensors]
 
 #files to access: /sps/lsst/users/tguillem/web/by_hand/master_bias/1D/13162/R41/S10/masterbias_rms.FITS
-path_input = '/sps/lsst/users/tguillem/web/by_hand/master_bias/2D/13162/'
+path_input = '/sps/lsst/users/tguillem/web/by_hand/master_bias/1D/13162/'
 #path_input2 = '/sps/lsst/users/tguillem/web/by_hand/master_bias/fix1/2D/13162/'
 #path_input = '/sps/lsst/users/tguillem/web/debug/waves/metrics/13162/'
 path_output = '/sps/lsst/users/tguillem/web/by_hand/plots/master_bias/waves/skewness/1D/'
@@ -103,10 +103,10 @@ image_rms_file = 'masterbias_corr_2D_rms.FITS'
 #path_input2 = '/sps/lsst/users/tguillem/web/by_hand/master_bias/2D/13162/'
 path_input2 = '/sps/lsst/users/tguillem/web/by_hand/master_bias/fix1/1D/13162/'
 #path_input2 = '/sps/lsst/users/tguillem/web/run6/metrics/test_130623/13162/'
-#image_file2 = 'masterbias_corr_2D.FITS'
-#image_rms_file2 = 'masterbias_corr_2D_rms.FITS'
-image_file2 = 'masterbias.FITS'
-image_rms_file2 = 'masterbias_rms.FITS'
+image_file2 = 'masterbias_corr_2D.FITS'
+image_rms_file2 = 'masterbias_corr_2D_rms.FITS'
+#image_file2 = 'masterbias.FITS'
+#image_rms_file2 = 'masterbias_rms.FITS'
 
 os.makedirs(path_output,exist_ok=True)
 os.makedirs(path_output+'variance/',exist_ok=True)
@@ -252,7 +252,9 @@ for i_raft in range(len(rafts)):
             plt.legend(["mean={m}\nRMS={r}\nq95={q}\nskew={sk}".format(m=mean[m],r=rms[m],q=q95[m],sk=skewness[m])])
             plt.savefig(outpath_final2+'/RMS_amp_'+str(m+1)+'.png')
             plt.close()
-
+            #yellow corner
+            
+            
         t_variance = Table([mean, rms, q95, skewness], names=('mean', 'rms', 'q95', 'skewness'), meta={'name': 'Variances'})
         print(t_variance)
         t_variance.write(path_output + '/results/Variances_' + rafts[i_raft] + '_'+ ccds[i_ccd] + '.fits', overwrite=True)
