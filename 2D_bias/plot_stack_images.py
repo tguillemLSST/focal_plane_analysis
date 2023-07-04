@@ -26,12 +26,11 @@ import lsst.daf.butler as dafButler
 from conversion import *
 
 print('Configuration arguments: ', str(sys.argv))
-str_run_all = str(sys.argv[1])
-str_raft = str(sys.argv[2])
-str_all_sensors = str(sys.argv[3])
-collection_1 = str(sys.argv[4])
-collection_2 = str(sys.argv[5])
-output_data=str(sys.argv[6])
+str_raft = str(sys.argv[1])
+str_all_sensors = str(sys.argv[2])
+collection_1 = str(sys.argv[3])
+collection_2 = str(sys.argv[4])
+output_data=str(sys.argv[5])
 
 os.makedirs(output_data,exist_ok=True)
 
@@ -99,21 +98,21 @@ if plot_calibrations:
             plt.savefig(outpath_final+'/image_'+ccds[i_ccd]+'.png')
             plt.close()
             # get variance array
-            arr_1_var = calib_1.getVariance().getArray()#calib.variance.array
+            arr_var_1 = calib_1.getVariance().getArray()#calib.variance.array
             print('variance--')
-            print(arr_1_var)
+            print(arr_var_1)
             plt.figure()
-            plt.imshow(arr_1_var, origin='lower', vmin=0.2, vmax=1.0, cmap = 'hot')
+            plt.imshow(arr_var_1, origin='lower', vmin=0.2, vmax=1.0, cmap = 'hot')
             plt.colorbar()
             plt.title(title)
             plt.savefig(outpath_final_variance+'/image_'+ccds[i_ccd]+'.png')
             plt.close()
-            # difference collection_2 - collection_1
-            calib_2 = butler_2.get('bias', instrument='LSSTCam', detector=detector_id)
-            arr_2 = calib_2.getImage().getArray()
-            arr = arr_2 - arr_1
+            # variance difference collection_2 - collection_1
+            calib_2 = butler_2.get(calibType, instrument='LSSTCam', detector=detector_id)
+            arr_var_2 = calib_2.getVariance().getArray()
+            arr = arr_var_2 - arr_var_1
             plt.figure()
-            plt.imshow(arr, origin='lower', vmin=-2, vmax=2, cmap = 'hot')
+            plt.imshow(arr, origin='lower', vmin=-1, vmax=1, cmap = 'hot')
             plt.colorbar()
             plt.title(title)
             plt.savefig(outpath_final_difference+'/image_'+ccds[i_ccd]+'.png')
@@ -122,10 +121,10 @@ if plot_calibrations:
             detector = calib_1.getDetector()
             #get size
             amplifier = detector['C00']
-            sub_im0 = calib_1.getMaskedImage()[amplifier.getBBox()]
-            arr_amp0 = sub_im0.getImage().getArray()
-            im_x_size = arr_amp0.shape[1]
-            im_y_size = arr_amp0.shape[0]
+            sub_im1 = calib_1.getMaskedImage()[amplifier.getBBox()]
+            arr_amp1 = sub_im1.getImage().getArray()
+            im_x_size = arr_amp1.shape[1]
+            im_y_size = arr_amp1.shape[0]
             var_total =  np.zeros(16)
             mean_total = np.zeros(16)
             mean_corner = np.zeros(16)
@@ -146,40 +145,43 @@ if plot_calibrations:
             #print(up_column)
             for i_amp in range(len(amps)):
                 amplifier = detector[amps[i_amp]]
-                sub_im0 = calib_1.getMaskedImage()[amplifier.getBBox()]
-                arr_amp = sub_im0.getImage().getArray()
+                sub_im1 = calib_1.getMaskedImage()[amplifier.getBBox()]
+                arr_amp_1 = sub_im1.getImage().getArray()
                 plt.figure()
-                print(arr_amp.shape)
-                arr_amp_small = arr_amp[0:100,0:100]
-                arr_amp_corner = arr_amp[0:20,0:40]
+                #print(arr_amp_1.shape)
+                arr_amp_1_small = arr_amp_1[0:100,0:100]
+                arr_amp_1_corner = arr_amp_1[0:20,0:40]
                 if(i_amp>7):
-                    arr_amp_small = arr_amp[up_line:im_y_size,up_column:im_x_size]
-                    arr_amp_corner = arr_amp[up_line+80:im_y_size,up_column+60:im_x_size]
+                    arr_amp_1_small = arr_amp_1[up_line:im_y_size,up_column:im_x_size]
+                    arr_amp_1_corner = arr_amp_1[up_line+80:im_y_size,up_column+60:im_x_size]
                 title = rafts[i_raft]+' '+ccds[i_ccd]+' '+amps[i_amp]+': corner'    
-                plt.imshow(arr_amp_small, origin='lower', vmin=-5, vmax=5, cmap = 'hot')
+                plt.imshow(arr_amp_1_small, origin='lower', vmin=-5, vmax=5, cmap = 'hot')
                 plt.colorbar()
                 plt.title(title)
                 plt.savefig(outpath_final+amps[i_amp]+'.png')
-                var_total[i_amp] = np.var(arr_amp)
-                mean_total[i_amp] = np.mean(arr_amp)
-                var_line[i_amp,:] = np.var(arr_amp,axis=1)
-                mean_line[i_amp,:] = np.mean(arr_amp,axis=1)
-                var_column[i_amp,:] = np.var(arr_amp,axis=0)
-                mean_column[i_amp,:] = np.mean(arr_amp,axis=0)
+                var_total[i_amp] = np.var(arr_amp_1)
+                mean_total[i_amp] = np.mean(arr_amp_1)
+                var_line[i_amp,:] = np.var(arr_amp_1,axis=1)
+                mean_line[i_amp,:] = np.mean(arr_amp_1,axis=1)
+                var_column[i_amp,:] = np.var(arr_amp_1,axis=0)
+                mean_column[i_amp,:] = np.mean(arr_amp_1,axis=0)
                 #check yellow corner
-                mean_corner[i_amp] = np.mean(arr_amp_corner)
-                var_corner[i_amp] = np.var(arr_amp_corner)
+                mean_corner[i_amp] = np.mean(arr_amp_1_corner)
+                var_corner[i_amp] = np.var(arr_amp_1_corner)
                 print(amps[i_amp])
                 diff = mean_corner[i_amp]-mean_total[i_amp]
-                print(diff)
+                #print(diff)
                 #variance_metrics
-                arr_var_amp = sub_im0.getVariance().getArray()
-                values = arr_var_amp.flatten()
-                variance_q95[i_amp]=np.percentile(values,95)
-                variance_mean[i_amp] = np.mean(values)
-                variance_rms[i_amp] = np.std(values)
-                variance_skewness[i_amp] = skew(values)
-                
+                arr_var_amp_1 = sub_im1.getVariance().getArray()
+                sub_im2 = calib_2.getMaskedImage()[amplifier.getBBox()]
+                arr_var_amp_2 = sub_im2.getVariance().getArray()
+                values_1 = arr_var_amp_1.flatten()
+                values_2 = arr_var_amp_2.flatten()
+                variance_q95[i_amp]=np.percentile(values_1,95)
+                variance_mean[i_amp] = np.nanmean(values_1)
+                variance_rms[i_amp] = np.nanstd(values_1)
+                variance_skewness[i_amp] = skew(values_1,nan_policy='omit')
+                print(values_1)
             #write results    
             t_variance = Table([var_total, mean_total, var_line, mean_line, var_column, mean_column, mean_corner, var_corner, variance_q95, variance_mean, variance_rms, variance_skewness], names=('var_total', 'mean_total', 'var_line', 'mean_line', 'var_column', 'mean_column', 'mean_corner', 'var_corner', 'variance_q95', 'variance_mean', 'variance_rms', 'variance_skewness'), meta={'name': 'Variances'})
             print(t_variance)
@@ -199,7 +201,11 @@ if plot_images:
     #exposures = ['3021121200145','3021121200137','3021121200141','3021121200150','3021121200151','3021121200156','3021121200152','3021121200148','3021121200139','3021121200138','3021121200154','3021121200149','3021121200153','3021121200147','3021121200140','3021121200146','3021121200143','3021121200155','3021121200142','3021121200144']
     ###Run 6
     #exposures = ['3023061800079']
-    exposures = ['3023061800147']
+    #exposures = ['3023061800049']
+    #run 13378
+    exposures = ['3023061900157']
+    #run 13381
+    #exposures = ['3023062000166']
     #Run 13372
     #exposures = [ '3023061800079','3023061800100','3023061800058','3023061800025','3023061800106','3023061800024','3023061800049','3023061800023','3023061800021','3023061800073','3023061800052','3023061800027','3023061800070','3023061800076','3023061800064','3023061800091','3023061800082','3023061800094','3023061800103','3023061800030']
     for i_exp in range(len(exposures)):
@@ -236,7 +242,7 @@ if plot_images:
                 # get full array
                 arr = raw.getImage().getArray()
                 #plt.imshow(arr, origin='lower', vmin=-1, vmax=1, cmap = 'hot')
-                plt.imshow(arr, origin='lower', vmin=25, vmax=100, cmap = 'hot')
+                plt.imshow(arr, origin='lower', vmin=-10, vmax=10, cmap = 'hot')
                 plt.colorbar()
                 plt.title(title)
                 plt.savefig(outpath_final+'/image_'+ccds[i_ccd]+'.png')
