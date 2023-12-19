@@ -2,19 +2,27 @@
  
 #WARNING: LSST must not be already set up! 
 echo "LSST load" 
-source /cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/w_2023_05/loadLSST.bash  
+source /cvmfs/sw.lsst.eu/linux-x86_64/lsst_distrib/w_2023_34/loadLSST.bash  
 echo "LSST setup" 
 setup lsst_distrib  
  
-echo "Job configuration:"  
-echo ${run}  
-echo ${raft}  
-echo ${ccd}  
-echo ${exposure}
+echo "Job configuration:"
+echo ${run}
+echo ${raft}
+echo ${ccd}
+#echo ${exposure}
 
-export REPO=/sps/lsst/groups/FocalPlane/SLAC/run5/butler/gen3/main_20230111/
+export REPO=/sps/lsst/groups/FocalPlane/SLAC/run6/butler/main/butler.yaml
 export det=\'${raft}_${ccd}\'
-export exp=${exposure}
+export run_number=\'${run}\'
+#export exposure_id=${exposure}
+#export EXPOSURES=\'${exposure_1}\'\,\'${exposure_2}\'\,\'${exposure_3}\'\,\'${exposure_4}\'\,\'${exposure_5}\'
+export exposure_id_1=${exposure_1}
+export exposure_id_2=${exposure_2}
+export exposure_id_3=${exposure_3}
+export exposure_id_4=${exposure_4}
+export exposure_id_5=${exposure_5}
+#echo $EXPOSURES
 
 ###master bias
 #cd /sps/lsst/users/tguillem/Rubin/stack/w_2023_05/
@@ -25,13 +33,53 @@ export exp=${exposure}
 #    --register-dataset-types
 
 ###bias
-cd /sps/lsst/users/tguillem/Rubin/stack/w_2023_05/
-pipetask --long-log run -b $REPO -p cp_pipe/pipelines/cpBias_corr.yaml \
+#cd /sps/lsst/users/tguillem/Rubin/stack/w_2023_34/
+#pipetask --long-log run -b $REPO -p cp_pipe/pipelines/cpBias_corr.yaml \
+#    -j $SLURM_CPUS_PER_TASK \
+#    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/debug_run_6b_0D_20231027d/exp_$exp -c isr:doDefect=False \
+#    -d "instrument='LSSTCam' AND exposure.id=$exp" \
+#    --register-dataset-types
+
+#test many exposures
+cd /sps/lsst/users/tguillem/Rubin/stack/w_2023_34/
+pipetask --long-log run -b $REPO -p cp_pipe/pipelines/LsstCam/cpBias_corr.yaml \
     -j $SLURM_CPUS_PER_TASK \
-    -i LSSTCam/raw/all,u/tguillem/DM-37455/master_bias_2D_20230206a -o u/tguillem/waves/run_13161_raw_20230412d -c isr:doDefect=False \
-    -d "instrument='LSSTCam' AND exposure.science_program='13161' AND exposure.id=$exp" \
+    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/run_${run}_0D_exp_${exposure_id_1}_20231127d -c isr:doDefect=False \
+    -c isr:doOverscan=True -c isr:overscan.doParallelOverscan=False -c isr:overscan.fitType='MEDIAN' \
+    -d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id_1" \
     --register-dataset-types
 
+pipetask --long-log run -b $REPO -p cp_pipe/pipelines/LsstCam/cpBias_corr.yaml \
+    -j $SLURM_CPUS_PER_TASK \
+    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/run_${run}_0D_exp_${exposure_id_2}_20231127d -c isr:doDefect=False \
+    -c isr:doOverscan=True -c isr:overscan.doParallelOverscan=False -c isr:overscan.fitType='MEDIAN' \
+    -d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id_2" \
+    --register-dataset-types
+
+pipetask --long-log run -b $REPO -p cp_pipe/pipelines/LsstCam/cpBias_corr.yaml \
+    -j $SLURM_CPUS_PER_TASK \
+    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/run_${run}_0D_exp_${exposure_id_3}_20231127d -c isr:doDefect=False \
+    -c isr:doOverscan=True -c isr:overscan.doParallelOverscan=False -c isr:overscan.fitType='MEDIAN' \
+    -d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id_3" \
+    --register-dataset-types
+
+pipetask --long-log run -b $REPO -p cp_pipe/pipelines/LsstCam/cpBias_corr.yaml \
+    -j $SLURM_CPUS_PER_TASK \
+    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/run_${run}_0D_exp_${exposure_id_4}_20231127d -c isr:doDefect=False \
+    -c isr:doOverscan=True -c isr:overscan.doParallelOverscan=False -c isr:overscan.fitType='MEDIAN' \
+    -d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id_4" \
+    --register-dataset-types
+
+pipetask --long-log run -b $REPO -p cp_pipe/pipelines/LsstCam/cpBias_corr.yaml \
+    -j $SLURM_CPUS_PER_TASK \
+    -i LSSTCam/raw/all,LSSTCam/calib -o u/tguillem/run_6_validation/run_${run}_0D_exp_${exposure_id_5}_20231127d -c isr:doDefect=False \
+    -c isr:doOverscan=True -c isr:overscan.doParallelOverscan=False -c isr:overscan.fitType='MEDIAN' \
+    -d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id_5" \
+    --register-dataset-types
+
+#-d "instrument='LSSTCam' AND exposure.science_program=$run_number AND (exposure.id=$exposure_id_1 OR exposure.id=$exposure_id_2 OR exposure.id=$exposure_id_3 OR exposure.id=$exposure_id_4 OR exposure.id=$exposure_id_5)"
+#-d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure IN ($EXPOSURES)" \
+#-d "instrument='LSSTCam' AND exposure.science_program=$run_number AND exposure.id=$exposure_id" \
 ###copy of useful lines
 #-d "instrument='LSSTCam' AND exposure.science_program='13162' AND exposure.observation_type='bias' AND exposure.seq_num=192" \
 
