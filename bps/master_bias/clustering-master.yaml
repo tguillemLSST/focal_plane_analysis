@@ -1,0 +1,5 @@
+clusterAlgorithm: lsst.ctrl.bps.quantum_clustering_funcs.dimension_clustering
+cluster:
+    detector_bias:
+        pipetasks: biasIsr,cpBiasCombine
+        dimensions: detector
