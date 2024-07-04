@@ -27,21 +27,25 @@ import lsst.daf.butler as dafButler
 from lsst.ip.isr import AssembleCcdTask
 assembleTask = AssembleCcdTask()
 
-output_data='/sdf/home/t/tguillem/public_html/Operations_Rehearsal/OR3/runs/test/'
+output_data='/sdf/home/t/tguillem/public_html/Operations_Rehearsal/OR4/20240625/'
 os.makedirs(output_data,exist_ok=True)
 
 #butler access
 #repo_1='/sdf/data/rubin/repo/ops-rehearsal-3-prep/butler.yaml'
 #print('=========butler 1: ' + repo_1)
-repo='/sdf/group/rubin/repo/embargo/butler.yaml'
-print('=========butler : ' + repo)
+#repo='embargo_or4.yaml'
+#print('=========butler : ' + repo)
 
 #collections
 #collection_1='LSSTComCamSim/raw/all'#runs/nightlyvalidation/20240403/d_2024_03_29/DM-43612'
 collection_1='LSSTComCamSim/raw/all'
 datasetType_1_1='raw'
+#OR3
+#collection_2='LSSTComCamSim/runs/nightlyvalidation/20240403/d_2024_03_29/DM-43612'
+#OR4
+collection_2='LSSTComCamSim/nightlyValidation'
+#collection_2='LSSTComCamSim/prompt/output-2024-06-25'
 
-collection_2='LSSTComCamSim/runs/nightlyvalidation/20240403/d_2024_03_29/DM-43612'
 datasetType_2_1='postISRCCD'
 datasetType_2_2='calexp'
 datasetType_2_3='calexpBackground'
@@ -49,13 +53,17 @@ datasetType_2_3='calexpBackground'
 #print('=========collections: ' + collection_1 + ' and ' + collection_2)
 #butler_1 = dafButler.Butler(repo_1)
 #registry_1 = butler_1.registry
-butler = dafButler.Butler(repo)
+repo = 'embargo_or4'
+butler = dafButler.Butler(repo,writeable=False)
 registry = butler.registry
+#old
+#butler = dafButler.Butler(repo)
+#registry = butler.registry
 
 #CCD
 rafts=['R22']
 ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
-#ccds=['S00']
+ccds=['S01', 'S02']
 
 #get the list of exposures
 #exposures=[]
@@ -64,7 +72,8 @@ ccds=['S00' ,'S01' ,'S02' ,'S10' ,'S11' ,'S12' ,'S20' ,'S21' ,'S22']
 #print(raw_exps)
 
 #by hand
-exposures = ['7024040400737']
+#exposures = ['7024062500131']
+exposures = ['7024062500500']
 arr_raw_ccd=[]
 arr_postISRCCD_ccd=[]
 arr_calexp_ccd=[]
@@ -130,6 +139,7 @@ for i_exp in range(len(exposures)):
             plt.title(title)
             plt.savefig(outpath_final_raw+'/image_'+ccds[i_ccd]+'.png')
             plt.close()
+            #sys.exit()
 
             #postISRCCD
             datasetRefs=list(registry.queryDatasets(datasetType=datasetType_2_1, instrument='LSSTComCamSim', collections=collection_2, where=f"detector.full_name={detector}"))
@@ -148,6 +158,7 @@ for i_exp in range(len(exposures)):
             plt.savefig(outpath_final_postISRCCD+'/image_'+ccds[i_ccd]+'.png')
             plt.close()
 
+            detector = '\'' + rafts[i_raft] + '_' +ccds[i_ccd] + '\' AND visit.id=' + str_exp
             #calexp
             datasetRefs=list(registry.queryDatasets(datasetType=datasetType_2_2, instrument='LSSTComCamSim', collections=collection_2, where=f"detector.full_name={detector}"))
             calexp = butler.get(datasetRefs[0])
@@ -173,8 +184,8 @@ for i_exp in range(len(exposures)):
             arr_calexpBackground = calexpBackground.getImage().getArray()
             arr_calexpBackground_ccd.append(arr_calexpBackground)
             mean_calexpBackground=np.mean(arr_calexpBackground)
-            max_calexpBackground=mean_calexpBackground+1
-            min_calexpBackground=mean_calexpBackground-1
+            max_calexpBackground=mean_calexpBackground+10
+            min_calexpBackground=mean_calexpBackground-10
             #max_calexpBackground=1220
             #min_calexpBackground=1180
             plt.figure(figsize=(20, 18))
@@ -260,12 +271,14 @@ for i_exp in range(len(exposures)):
             #del arr_amp0
             gc.collect()
 
+        #sys.exit()    
         #Raft-level analysis            
+        title = rafts[i_raft]+' exp='+str(exposure)
         #raw
         arr_raw_raft_S0=np.concatenate((arr_raw_ccd[0],arr_raw_ccd[1],arr_raw_ccd[2]),axis=1)
         arr_raw_raft_S1=np.concatenate((arr_raw_ccd[3],arr_raw_ccd[4],arr_raw_ccd[5]),axis=1)
         arr_raw_raft_S2=np.concatenate((arr_raw_ccd[6],arr_raw_ccd[7],arr_raw_ccd[8]),axis=1)
-        arr_raw_raft=np.concatenate((arr_raw_raft_S2,arr_raw_raft_S1,arr_raw_raft_S0),axis=0)
+        arr_raw_raft=np.concatenate((arr_raw_raft_S0,arr_raw_raft_S1,arr_raw_raft_S2),axis=0)
         #print(arr_raw_raft)
         plt.figure(figsize=(20, 18))
         mean_raw=np.mean(arr_raw_raft)
@@ -294,14 +307,14 @@ for i_exp in range(len(exposures)):
         arr_postISRCCD_raft_S0=np.concatenate((arr_postISRCCD_ccd[0],arr_postISRCCD_ccd[1],arr_postISRCCD_ccd[2]),axis=1)
         arr_postISRCCD_raft_S1=np.concatenate((arr_postISRCCD_ccd[3],arr_postISRCCD_ccd[4],arr_postISRCCD_ccd[5]),axis=1)
         arr_postISRCCD_raft_S2=np.concatenate((arr_postISRCCD_ccd[6],arr_postISRCCD_ccd[7],arr_postISRCCD_ccd[8]),axis=1)
-        arr_postISRCCD_raft=np.concatenate((arr_postISRCCD_raft_S2,arr_postISRCCD_raft_S1,arr_postISRCCD_raft_S0),axis=0)
+        arr_postISRCCD_raft=np.concatenate((arr_postISRCCD_raft_S0,arr_postISRCCD_raft_S1,arr_postISRCCD_raft_S2),axis=0)
         #print(arr_postISRCCD_raft)
         plt.figure(figsize=(20, 18))
         mean_postISRCCD=np.mean(arr_postISRCCD_raft)
         max_postISRCCD=np.max(arr_postISRCCD_raft)
         min_postISRCCD=np.min(arr_postISRCCD_raft)
-        max_postISRCCD=mean_postISRCCD-100
-        min_postISRCCD=mean_postISRCCD+100
+        max_postISRCCD=mean_postISRCCD+100
+        min_postISRCCD=mean_postISRCCD-100
         plt.imshow(arr_postISRCCD_raft, origin='lower', vmin=min_postISRCCD, vmax=max_postISRCCD, cmap='gist_gray')
         plt.colorbar()
         plt.title(title)
@@ -323,7 +336,7 @@ for i_exp in range(len(exposures)):
         arr_calexp_raft_S0=np.concatenate((arr_calexp_ccd[0],arr_calexp_ccd[1],arr_calexp_ccd[2]),axis=1)
         arr_calexp_raft_S1=np.concatenate((arr_calexp_ccd[3],arr_calexp_ccd[4],arr_calexp_ccd[5]),axis=1)
         arr_calexp_raft_S2=np.concatenate((arr_calexp_ccd[6],arr_calexp_ccd[7],arr_calexp_ccd[8]),axis=1)
-        arr_calexp_raft=np.concatenate((arr_calexp_raft_S2,arr_calexp_raft_S1,arr_calexp_raft_S0),axis=0)
+        arr_calexp_raft=np.concatenate((arr_calexp_raft_S0,arr_calexp_raft_S1,arr_calexp_raft_S2),axis=0)
         #print(arr_calexp_raft)
         plt.figure(figsize=(20, 18))
         mean_calexp=np.mean(arr_calexp_raft)
@@ -352,7 +365,7 @@ for i_exp in range(len(exposures)):
         arr_calexpBackground_raft_S0=np.concatenate((arr_calexpBackground_ccd[0],arr_calexpBackground_ccd[1],arr_calexpBackground_ccd[2]),axis=1)
         arr_calexpBackground_raft_S1=np.concatenate((arr_calexpBackground_ccd[3],arr_calexpBackground_ccd[4],arr_calexpBackground_ccd[5]),axis=1)
         arr_calexpBackground_raft_S2=np.concatenate((arr_calexpBackground_ccd[6],arr_calexpBackground_ccd[7],arr_calexpBackground_ccd[8]),axis=1)
-        arr_calexpBackground_raft=np.concatenate((arr_calexpBackground_raft_S2,arr_calexpBackground_raft_S1,arr_calexpBackground_raft_S0),axis=0)
+        arr_calexpBackground_raft=np.concatenate((arr_calexpBackground_raft_S0,arr_calexpBackground_raft_S1,arr_calexpBackground_raft_S2),axis=0)
         #print(arr_calexpBackground_raft)
         plt.figure(figsize=(20, 18))
         mean_calexpBackground=np.mean(arr_calexpBackground_raft)
@@ -374,6 +387,7 @@ for i_exp in range(len(exposures)):
         plt.grid(which='major', axis='both', linestyle='-', linewidth='0.5', color='grey')
         plt.legend()
         plt.savefig(outpath_exp_calexpBackground+'/raft_level/'+'histo_raft.png')
+
         
 print('DONE')
 sys.exit()
