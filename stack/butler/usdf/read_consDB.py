@@ -1,7 +1,5 @@
 import pandas as pd
 import os
-import sys
-from sys import exit
 
 from lsst.summit.utils import ConsDbClient
 with open("token-file", "r") as f:
@@ -9,11 +7,9 @@ with open("token-file", "r") as f:
 client = ConsDbClient(f"https://user:{token}@usdf-rsp.slac.stanford.edu/consdb")
 # Note that "user" in the URL can be any string.
 print(client.schema())
-#sys.exit()
 
 ##########
 client.schema("lsstcomcamsim")
-
 #client.schema("lsstcomcamsim", "cdb_lsstcomcamsim.visit1_quicklook")
 
 instrument = 'lsstcomcamsim'
@@ -29,26 +25,13 @@ visits_query = f'''
         AND ((band IS NOT NULL) OR (physical_filter IS NOT NULL))
         AND day_obs = {day_obs_int}
 '''
-#AND exposure_id = 7024062500576
-
-#visits_query = f'''
-#    SELECT * FROM cdb_{instrument}.exposure
-#        WHERE day_obs = {day_obs_int}
-#'''
 
 visits = client.query(visits_query).to_pandas()
 
-#print(visits.columns)
-#print(visits.to_string())
+print(visits.columns)
 
-displayed_columns = ['exposure_id','physical_filter','sky_rotation']
-displayed_visits = visits.loc[:, displayed_columns]
-print(displayed_visits.to_string())
-
-#for i in range(visits.shape[0]):
-#    print(visits['exposure_id'][i] + ' | ' + str(visits['sky_rotation'][i]))
-#
 sys.exit()
+visits
 
 exposure_opsimdb_map = {
         'obs_start_mjd': 'observationStartMJD',
