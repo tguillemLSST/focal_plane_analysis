@@ -13,7 +13,7 @@ import lsst.geom as geom
 butler=dafButler.Butler('dp2_prep',collections='LSSTCam/runs/DRP/DP2/v30_0_0/DM-53881/stage3',skymap='lsst_cells_v2')
 registry = butler.registry
 
-#get trach and patch from on-sky geometrical info
+#get tract and patch from on-sky geometrical info
 ra, dec = 53.8, -28.1
 radec = geom.SpherePoint(ra, dec, geom.degrees)
 skymap = butler.get("skyMap")
@@ -21,6 +21,7 @@ tractInfo = skymap.findTract(radec)
 tract = tractInfo.getId()
 patchInfo = tractInfo.findPatch(radec)
 patch = tractInfo.getSequentialPatchIndex(patchInfo)
+print('tract = ' + str(tract) + ' and patch = ' + str(patch))
 
 bands = ['u','g','r','i','z','y']
 for i_band in range(len(bands)):
