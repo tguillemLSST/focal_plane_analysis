@@ -38,6 +38,8 @@ exposures = ['2025120200381']
 rafts=[str_raft]
 ccds=[str_all_sensors]
 
+edge_detectors=['R01_S00','R01_S01','R01_S02','R01_S10','R02_S00','R02_S01','R02_S02','R03_S00','R03_S01','R03_S02','R03_S12','R14_S01','R14_S02','R14_S12','R14_S22','R24_S02','R24_S12','R24_S22','R34_S02','R34_S12','R34_S22','R34_S21','R34_S12','R34_S22','R43_S12','R43_S22','R43_S21','R43_S20','R42_S22','R42_S21','R42_S20','R41_S22','R42_S21','R41_S20','R41_S10','R30_S21','R30_S20','R30_S10','R30_S00','R20_S20','R20_S21','R20_S00','R10_S20','R10_S10','R10_S00','R10_S01']
+
 #loop over exposures and detectors
 for i_exp in range(len(exposures)):
     str_exp = str(exposures[i_exp])
@@ -47,6 +49,9 @@ for i_exp in range(len(exposures)):
             detector_full_name = rafts[i_raft] + '_' +ccds[i_ccd]
             if(detector_full_name=='R30_S12'):
                 continue
+            if(detector_full_name not in edge_detectors):
+                continue
+
             detector_condition = '\'' + rafts[i_raft] + '_' +ccds[i_ccd] + '\' AND exposure.id=' + str_exp
 
             datasetRefs=list(registry.queryDatasets(datasetType=final_dataset, instrument='LSSTCam', collections=final_collection, where=f"detector.full_name={detector_condition}"))
